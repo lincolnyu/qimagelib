@@ -43,8 +43,7 @@ namespace ImageCompConsole
                 var x = args[i];
                 if (x == sw)
                 {
-                    i++;
-                    if (i < args.Length)
+                    if (i+1 < args.Length)
                     {
                         var t = args[i + 1];
                         if (t.StartsWith("-"))

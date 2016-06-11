@@ -44,8 +44,6 @@ namespace ImageCompConsole
             }
         }
 
-        
-
         private static void SearchAndMatch(string sdir, string report, bool verbose=false, bool parallel=false)
         {
             const int lineLen = 118;
@@ -89,6 +87,7 @@ namespace ImageCompConsole
                     imageList = dir.GetImages(ImageManager.Instance).Where(x => x.IsValidY).OrderByAbsAspRatio().ToList();
                 }
                 IEnumerable<SimpleImageMatch> matches;
+                var exportReport = !string.IsNullOrWhiteSpace(report);
                 if (verbose)
                 {
                     Console.WriteLine("Matching image files" + (parallel ? " in parallel" : "") + " ...");
@@ -122,7 +121,14 @@ namespace ImageCompConsole
                     
                     Console.WriteLine();
                     Console.WriteLine("Image matching completed.");
-                    Console.WriteLine("Printing matched images...");
+                    if (exportReport)
+                    {
+                        Console.WriteLine("Exporting matched images...");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Printing matched images...");
+                    }
                 }
                 else
                 {
@@ -135,23 +141,35 @@ namespace ImageCompConsole
                         matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
                     }
                 }
-                StreamWriter reportWriter = null;
-                if (!string.IsNullOrWhiteSpace(report))
+                if (exportReport)
                 {
-                    reportWriter = new StreamWriter(report);
-                }
-                foreach (var match in matches)
-                {
-                    var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
-                    Console.WriteLine(mrep);
-                    if (reportWriter != null)
+                    using (var reportWriter = new StreamWriter(report))
                     {
-                        reportWriter.WriteLine(mrep);
+                        foreach (var match in matches)
+                        {
+                            var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
+                            reportWriter.WriteLine(mrep);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var match in matches)
+                    {
+                        var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
+                        Console.WriteLine(mrep);
                     }
                 }
                 if (verbose)
                 {
-                    Console.WriteLine("End of matching images");
+                    if  (exportReport)
+                    {
+                        Console.WriteLine($"List of images is exported to '{report}'");
+                    }
+                    else
+                    {
+                        Console.WriteLine("End of matching images");
+                    }
                 }
             }
             catch (Exception e)
@@ -196,7 +214,7 @@ namespace ImageCompConsole
             Console.WriteLine("  To compare two images: ");
             Console.WriteLine("\t" + appname + " -c <path to first image> <path to second image>");
             Console.WriteLine("  To search for similar images in subdirectories (-q to turn on quite mode)");
-            Console.WriteLine("\t" + appname + " -s <base directory> [-q]");
+            Console.WriteLine("\t" + appname + " -s <base directory> [-q] [-o <report file>]");
             Console.WriteLine("  To show this usage help: ");
             Console.WriteLine("\t" + appname + " --help");
         }
