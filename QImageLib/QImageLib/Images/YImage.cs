@@ -13,6 +13,7 @@
         {
             get;
         }
+
         public byte this[int y, int x] => Y[y,x];
         public int NumRows => Y.GetLength(0);
         public int NumCols => Y.GetLength(1);
