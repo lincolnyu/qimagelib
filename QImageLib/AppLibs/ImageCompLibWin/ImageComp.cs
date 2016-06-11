@@ -18,7 +18,7 @@ namespace ImageCompLibWin
         {
             var yimage1 = image1.GetYImage();
             var yimage2 = image2.GetYImage();
-            return yimage1.GetSimpleMinMse(yimage2);
+            return yimage1.GetSimpleMinMse(yimage2).Value;
         }
     }
 }

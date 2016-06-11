@@ -26,11 +26,11 @@ namespace QImageLib.Images
                     case Transforms.BasicTransform.Types.Rotate180:
                         return OriginalImage[OriginalImage.NumRows - y - 1, OriginalImage.NumCols- x - 1];
                     case Transforms.BasicTransform.Types.RotateCw90:
-                        return OriginalImage[OriginalImage.NumCols - x - 1, y];
+                        return OriginalImage[OriginalImage.NumRows - x - 1, y];
                     case Transforms.BasicTransform.Types.RotateCcw90:
-                        return OriginalImage[x, OriginalImage.NumRows - y - 1];
+                        return OriginalImage[x, OriginalImage.NumCols - y - 1];
                     case Transforms.BasicTransform.Types.RotateCw90AndVf:
-                        return OriginalImage[OriginalImage.NumCols - x - 1, OriginalImage.NumRows - y - 1];
+                        return OriginalImage[OriginalImage.NumRows - x - 1, OriginalImage.NumCols - y - 1];
                     case Transforms.BasicTransform.Types.RotateCcw90AndVf:
                         return OriginalImage[x, y];
                     default:

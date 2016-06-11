@@ -2,14 +2,14 @@
 {
     public class SimpleImageMatch
     {
-        public SimpleImageMatch(string path1, string path2, double mse)
+        public SimpleImageMatch(ImageProxy image1, ImageProxy image2, double mse)
         {
-            Path1 = path1;
-            Path2 = path2;
+            Image1 = image1;
+            Image2 = image2;
             Mse = mse;
         }
-        public string Path1 { get; }
-        public string Path2 { get; }
+        public ImageProxy Image1 { get; }
+        public ImageProxy Image2 { get; }
         public double Mse { get; }
     }
 }

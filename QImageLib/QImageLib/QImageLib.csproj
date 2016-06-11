@@ -40,13 +40,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Conversions\RgbToYCbCr.cs" />
-    <Compile Include="Helpers\ImagePropertiesHelpoer.cs" />
+    <Compile Include="Helpers\ImagePropertiesHelper.cs" />
     <Compile Include="Images\YImagePlus.cs" />
     <Compile Include="Images\IYImage.cs" />
     <Compile Include="Images\YImage.cs" />
     <Compile Include="Images\YImageAdapter.cs" />
     <Compile Include="Images\YImagePlus2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Statistics\FastHistogram.cs" />
     <Compile Include="Transforms\BasicTransform.cs" />
     <Compile Include="Transforms\ITransform.cs" />
     <Compile Include="Transforms\Matrix2D.cs" />

@@ -1,13 +1,12 @@
 ﻿using System.Drawing;
-using ImageCompLibWin;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.IO;
-using QImageLib.Matcher;
-using QImageLib.Images;
 using System.Collections.Generic;
-using QImageLib.Helpers;
+using QImageLib.Matcher;
+using ImageCompLibWin;
+using ImageCompLibWin.Helpers;
 
 namespace ImageCompConsole
 {
@@ -31,63 +30,114 @@ namespace ImageCompConsole
                 else if (args[0] == "-s")
                 {
                     var dir = args[1];
+                    var outf = args.GetSwitchValue("-o");
                     SearchAndMatch(dir, !args.Contains("-q"));
                 }            
             }
             catch (Exception)
             {
-                Console.WriteLine("Something went wrong. Please check the input.");
+                Console.WriteLine($"Invalid command arguments.");
                 PrintUsage();
             }
         }
 
-        private static void SearchAndMatch(string dir, bool verbose=false)
+        
+
+        private static void SearchAndMatch(string sdir, bool verbose=false)
         {
-            if(verbose)
+            const int lineLen = 118;
+            try
             {
-                Console.WriteLine("Collecting image files...");
-            }
-            IList<Tuple<IYImage, FileInfo>> imageList;
-            if (verbose)
-            {
-                var localList = new List<Tuple<IYImage, FileInfo>>();
-                imageList = localList;
-                var imageEnum = dir.GetYImageFileTuples();
-                foreach (var image in imageEnum)
+                if (verbose)
                 {
-                    Console.WriteLine($"{image.Item2.FullName} collected.");
-                    imageList.Add(image);
+                    Console.WriteLine("Collecting image files...");
                 }
-                localList.Sort((a, b) => a.Item1.GetAbsAspectRatio().CompareTo(b.Item1.GetAbsAspectRatio()));
+                IList<ImageProxy> imageList;
+                var dir = new DirectoryInfo(sdir);
+                if (verbose)
+                {
+                    var localList = new List<ImageProxy>();
+                    var imageEnum = dir.GetImages(ImageManager.Instance);
+                    var validCount = 0;
+                    var totalCount = 0;
+                    ConsoleHelper.ResetInPlaceWriting(lineLen);
+                    foreach (var image in imageEnum)
+                    {
+                        totalCount++;
+                        if (image.IsValidY)
+                        {
+                            validCount++;
+                            $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
+                            localList.Add(image);
+                        }
+                        else
+                        {
+                            $"{validCount}/{totalCount} file(s) collected. Last ignored: {image.File.Name}.".InPlaceWriteToConsole();
+                        }
+                    }
+                    Console.WriteLine();
+                    Console.WriteLine("Sorting files ...");
+                    localList.Sort((a, b) => a.AbsAspRatio.CompareTo(b.AbsAspRatio));
+                    Console.WriteLine("Files sorted...");
+                    imageList = localList;
+                }
+                else
+                {
+                    imageList = dir.GetImages(ImageManager.Instance).Where(x => x.IsValidY).OrderByAbsAspRatio().ToList();
+                }
+                IEnumerable<SimpleImageMatch> matches;
+                if (verbose)
+                {
+                    Console.WriteLine("Matching image files...");
+                    ConsoleHelper.ResetInPlaceWriting(lineLen);
+
+                    var total = (imageList.Count - 1) * imageList.Count / 2;
+                    matches = imageList.SimpleSearchAndMatchImages((i, j) =>
+                    {
+                        var il = imageList.Count - i - 2;
+                        var left = (il + 1) * il / 2 + (imageList.Count - j - 1);
+                        var comp = total - left;
+                        var perc = comp * 100 / total;
+                        $"{comp}/{total} ({perc}%) completed".InPlaceWriteToConsole();
+                    }).OrderBy(x => x.Mse).ToList();
+                    Console.WriteLine();
+                    Console.WriteLine("Image matching completed.");
+                    Console.WriteLine("Printing matching images...");
+                }
+                else
+                {
+                    matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
+                }
+                foreach (var match in matches)
+                {
+                    Console.WriteLine($"{match.Image1.Path},{match.Image2.Path},{match.Mse}");
+                }
+                if (verbose)
+                {
+                    Console.WriteLine("End of matching images");
+                }
             }
-            else
+            catch (Exception e)
             {
-                imageList = dir.GetYImageFileTuples().OrderByAbsAspRatio().ToList();
-            }
-            if (verbose)
-            {
-                Console.WriteLine("Image files collected.");
-                Console.WriteLine("Matching image files...");
-            }
-            var matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
-            foreach (var match in matches)
-            {
-                Console.WriteLine($"{match.Path1},{match.Path2},{match.Mse}");
-            }
-            if (verbose)
-            {
-                Console.WriteLine("Image matching completed.");
+                Console.WriteLine($"Something went wrong. Details: {e.Message}");
             }
         }
 
         private static void Comp(string path1, string path2)
         {
-            var bmp1 = (Bitmap)Image.FromFile(path1);
-            var bmp2 = (Bitmap)Image.FromFile(path2);
-            var mse = bmp1.GetSimpleMinMse(bmp2);
-            var similar = mse <= ImageComp.DefaultMseThr;
-            var ssim = similar ? "similar" : "different";
-            Console.WriteLine($"Simple min MSE = {mse}, images considered {ssim}.");
+            try
+            {
+                var bmp1 = (Bitmap)Image.FromFile(path1);
+                var bmp2 = (Bitmap)Image.FromFile(path2);
+                var mse = bmp1.GetSimpleMinMse(bmp2);
+                var similar = mse <= ImageComp.DefaultMseThr;
+                var ssim = similar ? "similar" : "different";
+                Console.WriteLine($"Simple min MSE = {mse}, images considered {ssim}.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Something went wrong. Details: {e.Message}");
+            }
         }
 
         private static void PrintUsage()
