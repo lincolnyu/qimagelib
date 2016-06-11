@@ -24,17 +24,17 @@ namespace ImageCompLibWin
                 for (var j = i + 1; j < images.Count; j++)
                 {
                     var image2 = images[j];
-                    var histo2 = image2.FastHisto;
-                    if (histo1.Diff(histo2) > histoThr)
-                    {
-                        progress?.Invoke(i, j);
-                        continue;
-                    }
                     var r2 = image2.AbsAspRatio;
                     if (r2 > r1 * aspThr)
                     {
                         progress?.Invoke(i, j);
                         break;
+                    }
+                    var histo2 = image2.FastHisto;
+                    if (histo1.Diff(histo2) > histoThr)
+                    {
+                        progress?.Invoke(i, j);
+                        continue;
                     }
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
                     if (mse != null)

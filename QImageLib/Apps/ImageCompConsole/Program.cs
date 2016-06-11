@@ -30,8 +30,8 @@ namespace ImageCompConsole
                 else if (args[0] == "-s")
                 {
                     var dir = args[1];
-                    var outf = args.GetSwitchValue("-o");
-                    SearchAndMatch(dir, !args.Contains("-q"));
+                    var report = args.GetSwitchValue("-o");
+                    SearchAndMatch(dir, report, !args.Contains("-q"));
                 }            
             }
             catch (Exception)
@@ -43,7 +43,7 @@ namespace ImageCompConsole
 
         
 
-        private static void SearchAndMatch(string sdir, bool verbose=false)
+        private static void SearchAndMatch(string sdir, string report, bool verbose=false)
         {
             const int lineLen = 118;
             try
@@ -108,9 +108,19 @@ namespace ImageCompConsole
                 {
                     matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
                 }
+                StreamWriter reportWriter = null;
+                if (!string.IsNullOrWhiteSpace(report))
+                {
+                    reportWriter = new StreamWriter(report);
+                }
                 foreach (var match in matches)
                 {
-                    Console.WriteLine($"{match.Image1.Path},{match.Image2.Path},{match.Mse}");
+                    var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
+                    Console.WriteLine(mrep);
+                    if (reportWriter != null)
+                    {
+                        reportWriter.WriteLine(mrep);
+                    }
                 }
                 if (verbose)
                 {
