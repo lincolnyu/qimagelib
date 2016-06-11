@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using QImageLib.Matcher;
 using ImageCompLibWin;
 using ImageCompLibWin.Helpers;
+using System.Threading;
 
 namespace ImageCompConsole
 {
@@ -31,7 +32,9 @@ namespace ImageCompConsole
                 {
                     var dir = args[1];
                     var report = args.GetSwitchValue("-o");
-                    SearchAndMatch(dir, report, !args.Contains("-q"));
+                    var verbose = !args.Contains("-q");
+                    var parallel = args.Contains("-p");
+                    SearchAndMatch(dir, report, verbose, parallel);
                 }            
             }
             catch (Exception)
@@ -43,7 +46,7 @@ namespace ImageCompConsole
 
         
 
-        private static void SearchAndMatch(string sdir, string report, bool verbose=false)
+        private static void SearchAndMatch(string sdir, string report, bool verbose=false, bool parallel=false)
         {
             const int lineLen = 118;
             try
@@ -88,25 +91,49 @@ namespace ImageCompConsole
                 IEnumerable<SimpleImageMatch> matches;
                 if (verbose)
                 {
-                    Console.WriteLine("Matching image files...");
+                    Console.WriteLine("Matching image files" + (parallel ? " in parallel" : "") + " ...");
                     ConsoleHelper.ResetInPlaceWriting(lineLen);
 
                     var total = (imageList.Count - 1) * imageList.Count / 2;
-                    matches = imageList.SimpleSearchAndMatchImages((i, j) =>
+                    if (parallel)
                     {
-                        var il = imageList.Count - i - 2;
-                        var left = (il + 1) * il / 2 + (imageList.Count - j - 1);
-                        var comp = total - left;
-                        var perc = comp * 100 / total;
-                        $"{comp}/{total} ({perc}%) completed".InPlaceWriteToConsole();
-                    }).OrderBy(x => x.Mse).ToList();
+                        int tasks = 0;
+                        matches = imageList.SimpleSearchAndMatchImagesParallel(() =>
+                        {
+                            lock(imageList)
+                            {
+                                tasks++;
+                                var perc = tasks * 100 / total;
+                                $"{tasks}/{total} ({perc}%) completed".InPlaceWriteToConsole();
+                            }
+                        }).OrderBy(x => x.Mse).ToList();
+                    }
+                    else
+                    {
+                        matches = imageList.SimpleSearchAndMatchImages((i, j) =>
+                        {
+                            var il = imageList.Count - i - 2;
+                            var left = (il + 1) * il / 2 + (imageList.Count - j - 1);
+                            var tasks = total - left;
+                            var perc = tasks * 100 / total;
+                            $"{tasks}/{total} ({perc}%) completed".InPlaceWriteToConsole();
+                        }).OrderBy(x => x.Mse).ToList();
+                    }
+                    
                     Console.WriteLine();
                     Console.WriteLine("Image matching completed.");
-                    Console.WriteLine("Printing matching images...");
+                    Console.WriteLine("Printing matched images...");
                 }
                 else
                 {
-                    matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
+                    if (parallel)
+                    {
+                        matches = imageList.SimpleSearchAndMatchImagesParallel().OrderBy(x => x.Mse);
+                    }
+                    else
+                    {
+                        matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
+                    }
                 }
                 StreamWriter reportWriter = null;
                 if (!string.IsNullOrWhiteSpace(report))
@@ -129,7 +156,19 @@ namespace ImageCompConsole
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Something went wrong. Details: {e.Message}");
+                Console.WriteLine($"Something went wrong.");
+                if (verbose)
+                {
+                    var indent = "";
+                    do
+                    {
+                        Console.WriteLine($"{indent}Error type: {e.GetType().Name}");
+                        Console.WriteLine($"{indent}Error details: {e.Message}");
+                        Console.WriteLine($"{indent}Stack trace: {e.StackTrace}");
+                        e = e.InnerException;
+                        indent += " "; 
+                    } while (e != null);
+                }
             }
         }
 

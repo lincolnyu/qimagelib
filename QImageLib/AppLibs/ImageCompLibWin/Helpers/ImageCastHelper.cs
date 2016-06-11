@@ -35,23 +35,27 @@ namespace ImageCompLibWin.Helpers
         /// </remarks>
         public static YImage GetYImage(this Bitmap bmp, int crunch = int.MaxValue)
         {
-            var bdata = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+            var bmpWidth = bmp.GetBitmapWidth();
+            var bmpHeight = bmp.GetBitmapHeight();
+            var pfmt = bmp.GetPixelFormat();
+
+            var bdata = bmp.LockBits(new Rectangle(0, 0, bmpWidth, bmpHeight), ImageLockMode.ReadOnly, pfmt);
             var size = bdata.Stride * bdata.Height;
             var buf = new byte[size];
             Marshal.Copy(bdata.Scan0, buf, 0, size);
 
-            var bpp = Image.GetPixelFormatSize(bmp.PixelFormat);
+            var bpp = Image.GetPixelFormatSize(pfmt);
             if (bpp != 24 && bpp != 32)
             {
                 throw new ArgumentException("Only 8, 24 and 32 bpp images are supported.");
             }
             var bypp = bpp / 8;
 
-            if (bmp.Height > crunch || bmp.Width > crunch)
+            if (bmpHeight > crunch || bmpWidth > crunch)
             {
-                var cr = bmp.Height > bmp.Width ? (double)bmp.Height / crunch : (double)bmp.Width / crunch;
-                var w = (int)Math.Round(bmp.Width / cr);
-                var h = (int)Math.Round(bmp.Height / cr);
+                var cr = bmpHeight > bmpWidth ? (double)bmpHeight / crunch : (double)bmpWidth / crunch;
+                var w = (int)Math.Round(bmpWidth / cr);
+                var h = (int)Math.Round(bmpHeight / cr);
                 var yimage = new YImage(h, w);
 
                 for (var i = 0; i < h; i++)
@@ -76,11 +80,11 @@ namespace ImageCompLibWin.Helpers
             else
             {
                 var pline = 0;
-                var yimage = new YImage(bmp.Height, bmp.Width);
-                for (var i = 0; i < bmp.Height; i++)
+                var yimage = new YImage(bmpHeight, bmpWidth);
+                for (var i = 0; i < bmpHeight; i++)
                 {
                     var p = pline;
-                    for (var j = 0; j < bmp.Width; j++, p += bypp)
+                    for (var j = 0; j < bmpWidth; j++, p += bypp)
                     {
                         var r = buf[p];
                         var g = buf[p + 1];

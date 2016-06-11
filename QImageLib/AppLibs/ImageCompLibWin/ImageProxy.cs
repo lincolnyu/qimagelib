@@ -19,7 +19,6 @@ namespace ImageCompLibWin
             ValidY,
         }
 
-   
         private Bitmap _bitmap;
         private YImage _yimage;
         private int _width;
@@ -118,8 +117,8 @@ namespace ImageCompLibWin
 
         public string Path => File.FullName;
 
-        public int Width => _width > 0 || AlreadyInvalid ? _width : (_width = Bitmap.Width);
-        public int Height => _height > 0 || AlreadyInvalid ? _height : (_height = Bitmap.Height);
+        public int Width => _width > 0 || AlreadyInvalid ? _width : (_width = Bitmap.GetBitmapWidth());
+        public int Height => _height > 0 || AlreadyInvalid ? _height : (_height = Bitmap.GetBitmapHeight());
         public double AbsAspRatio => _absAspRatio > 0 || AlreadyInvalid ? _absAspRatio : (_absAspRatio = ImagePropertiesHelper.GetAbsAspectRatio(Width, Height));
 
         private void TryLoadBitmap()
@@ -127,8 +126,8 @@ namespace ImageCompLibWin
             try
             {
                 _bitmap = (Bitmap)Image.FromFile(File.FullName);
-                _width = Bitmap.Width;
-                _height = Bitmap.Height;
+                _width = Bitmap.GetBitmapWidth();
+                _height = Bitmap.GetBitmapHeight();
                 _absAspRatio = ImagePropertiesHelper.GetAbsAspectRatio(Width, Height);
                 if (ValidationStatus != ValidationStatuses.InvalidY && ValidationStatus != ValidationStatuses.ValidY)
                 {

@@ -37,34 +37,37 @@ namespace ImageCompLibWin
             return image.Width * image.Height;
         }
 
-        public void Push(ImageProxy image)
+        public void Push(ImageProxy image) 
         {
-            if (QueuedImages.Contains(image))
+            lock (this)
             {
-                if (ImageQueue.Last.Value != image)
+                if (QueuedImages.Contains(image))
                 {
-                    var p = ImageQueue.Find(image);
-                    ImageQueue.Remove(p);
-                    ImageQueue.AddLast(image);
-                }
-            }
-            else
-            {
-                ImageQueue.AddLast(image);
-                QueuedImages.Add(image);
-                var size = ImageSize(image);
-                CachedSize += size;
-                if (CachedSize > CacheSize)
-                {
-                    do
+                    if (ImageQueue.Last.Value != image)
                     {
-                        Pop();
-                    } while (CachedSize > PopToSize);
+                        var p = ImageQueue.Find(image);
+                        ImageQueue.Remove(p);
+                        ImageQueue.AddLast(image);
+                    }
+                }
+                else
+                {
+                    ImageQueue.AddLast(image);
+                    QueuedImages.Add(image);
+                    var size = ImageSize(image);
+                    CachedSize += size;
+                    if (CachedSize > CacheSize)
+                    {
+                        do
+                        {
+                            Pop();
+                        } while (CachedSize > PopToSize);
+                    }
                 }
             }
         }
 
-        public void Pop()
+        private void Pop()
         {
             if (QueuedImages.Count > 0)
             {
@@ -79,10 +82,13 @@ namespace ImageCompLibWin
 
         public void Remove(ImageProxy image)
         {
-            if (QueuedImages.Contains(image))
+            lock(this)
             {
-                ImageQueue.Remove(image);
-                QueuedImages.Remove(image);
+                if (QueuedImages.Contains(image))
+                {
+                    ImageQueue.Remove(image);
+                    QueuedImages.Remove(image);
+                }
             }
         }
     }

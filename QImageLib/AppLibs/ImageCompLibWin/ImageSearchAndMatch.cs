@@ -2,6 +2,7 @@
 using System.Linq;
 using QImageLib.Matcher;
 using QImageLib.Statistics;
+using System.Threading.Tasks;
 
 namespace ImageCompLibWin
 {
@@ -11,6 +12,8 @@ namespace ImageCompLibWin
         public const int DefaultHistoThr = 6;
 
         public delegate void ProgressReport(int i, int j);
+
+        public delegate void ParallelProgressReport();
 
         public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
             double aspThr = DefaultAspRatioThr, double histoThr = DefaultHistoThr,
@@ -45,6 +48,53 @@ namespace ImageCompLibWin
                 }
                 image1.Release();
             }
+        }
+
+        public static IList<SimpleImageMatch> SimpleSearchAndMatchImagesParallel(this IList<ImageProxy> images, ParallelProgressReport progress = null,
+          double aspThr = DefaultAspRatioThr, double histoThr = DefaultHistoThr,
+          double mseThr = ImageComp.DefaultMseThr)
+        {
+            var result = new List<SimpleImageMatch>();
+            Parallel.For(0, images.Count - 1, (int i) =>
+            {
+                var image1 = images[i];
+                var histo1 = image1.FastHisto;
+                var r1 = image1.AbsAspRatio;
+                Parallel.For(i + 1, images.Count, (int j) =>
+                {
+                    var image2 = images[j];
+                    var r2 = image2.AbsAspRatio;
+                    if (r2 > r1 * aspThr)
+                    {
+                        progress?.Invoke();
+                        return;
+                    }
+                    var histo2 = image2.FastHisto;
+                    if (histo1 == null)
+                    {
+                        System.Console.WriteLine("histo1 fucking is null");
+                    }
+                    if (histo2 == null)
+                    {
+                        System.Console.WriteLine("histo2 fucking is null");
+                    }
+                    if (histo1.Diff(histo2) > histoThr)
+                    {
+                        progress?.Invoke();
+                        return;
+                    }
+                    var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                    if (mse != null)
+                    {
+                        lock(result)
+                        {
+                            result.Add(new SimpleImageMatch(image1, image2, mse.Value));
+                        }
+                    }
+                    progress?.Invoke();
+                });
+            });
+            return result;
         }
 
         public static IEnumerable<ImageProxy> OrderByAbsAspRatio(this IEnumerable<ImageProxy> yimageFileTuples)
