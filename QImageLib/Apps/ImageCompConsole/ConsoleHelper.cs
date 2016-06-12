@@ -6,9 +6,15 @@ namespace ImageCompConsole
     {
         public const int DefaultLineLength = 78;
 
+        public readonly static TimeSpan DefaultMinPrintInterval = TimeSpan.FromMilliseconds(1000);
+
         public static int LastInPlaceWriteLen { get; private set; }
 
         public static int LineLength { get; set; } = DefaultLineLength;
+        
+        public static DateTime LastPrintTime { get; private set; }
+
+        public static TimeSpan MinPrintInterval { get; set; } = DefaultMinPrintInterval;
 
         public static void ResetInPlaceWriting()
         {
@@ -34,6 +40,7 @@ namespace ImageCompConsole
             }
             Console.Write($"\r{s}");
             LastInPlaceWriteLen = s.Length;
+            UpdateLastPrintTime();
         }
 
         public static string GetSwitchValue(this string[] args, string sw)
@@ -59,6 +66,17 @@ namespace ImageCompConsole
                 }
             }
             return null;
+        }
+
+        public static void UpdateLastPrintTime()
+        {
+            LastPrintTime = DateTime.UtcNow;
+        }
+
+        public static bool CanFreqPrint()
+        {
+            var dur = DateTime.UtcNow - LastPrintTime;
+            return dur >= MinPrintInterval;
         }
     }
 }

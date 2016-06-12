@@ -7,12 +7,13 @@ using System.Collections.Generic;
 using QImageLib.Matcher;
 using ImageCompLibWin;
 using ImageCompLibWin.Helpers;
-using System.Threading;
 
 namespace ImageCompConsole
 {
     class Program
     {
+        private static DateTime _startTime;
+
         private static void Main(string[] args)
         {
             try
@@ -62,18 +63,28 @@ namespace ImageCompConsole
                     var validCount = 0;
                     var totalCount = 0;
                     ConsoleHelper.ResetInPlaceWriting(lineLen);
+                    var invalidFiles = new List<FileInfo>();
                     foreach (var image in imageEnum)
                     {
                         totalCount++;
                         if (image.IsValidY)
                         {
-                            validCount++;
-                            $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
                             localList.Add(image);
+                            validCount++;
+                            if (ConsoleHelper.CanFreqPrint())
+                            {
+                                $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
+                                ConsoleHelper.UpdateLastPrintTime();
+                            }
                         }
                         else
                         {
-                            $"{validCount}/{totalCount} file(s) collected. Last ignored: {image.File.Name}.".InPlaceWriteToConsole();
+                            invalidFiles.Add(image.File);
+                            if (ConsoleHelper.CanFreqPrint())
+                            {
+                                $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
+                                ConsoleHelper.UpdateLastPrintTime();
+                            }
                         }
                     }
                     Console.WriteLine();
@@ -94,16 +105,16 @@ namespace ImageCompConsole
                     ConsoleHelper.ResetInPlaceWriting(lineLen);
 
                     var total = (imageList.Count - 1) * imageList.Count / 2;
+                    int tasks = 0;
+                    StartProgress();
                     if (parallel)
                     {
-                        int tasks = 0;
                         matches = imageList.SimpleSearchAndMatchImagesParallel(() =>
                         {
                             lock(imageList)
                             {
                                 tasks++;
-                                var perc = tasks * 100 / total;
-                                $"{tasks}/{total} ({perc}%) completed".InPlaceWriteToConsole();
+                                PrintProgress(tasks, total);
                             }
                         }).OrderBy(x => x.Mse).ToList();
                     }
@@ -111,11 +122,8 @@ namespace ImageCompConsole
                     {
                         matches = imageList.SimpleSearchAndMatchImages((i, j) =>
                         {
-                            var il = imageList.Count - i - 2;
-                            var left = (il + 1) * il / 2 + (imageList.Count - j - 1);
-                            var tasks = total - left;
-                            var perc = tasks * 100 / total;
-                            $"{tasks}/{total} ({perc}%) completed".InPlaceWriteToConsole();
+                            tasks++;
+                            PrintProgress(tasks, total);
                         }).OrderBy(x => x.Mse).ToList();
                     }
                     
@@ -187,6 +195,28 @@ namespace ImageCompConsole
                         indent += " "; 
                     } while (e != null);
                 }
+            }
+        }
+
+        private static void StartProgress()
+        {
+            _startTime = DateTime.UtcNow;
+        }
+
+        private static void PrintProgress(int tasks, int total)
+        {
+            if (ConsoleHelper.CanFreqPrint())
+            {
+                var curr = DateTime.UtcNow;
+                var elapsed = curr - _startTime;
+                var estMins = elapsed.TotalMinutes * total / tasks;
+                var remain = TimeSpan.FromMinutes(estMins) - elapsed;
+                var elapsedstr = elapsed.ToString(@"d\.hh\:mm\:ss");
+                var remainstr = remain.ToString(@"d\.hh\:mm");
+                
+                var perc = tasks * 100 / total;
+                $"{tasks}/{total} ({perc}%) completed. {elapsedstr} elapsed, est. {remainstr} remaining.".InPlaceWriteToConsole();
+                ConsoleHelper.UpdateLastPrintTime();
             }
         }
 
