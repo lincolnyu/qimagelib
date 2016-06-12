@@ -70,14 +70,6 @@ namespace ImageCompLibWin
                         return;
                     }
                     var histo2 = image2.FastHisto;
-                    if (histo1 == null)
-                    {
-                        System.Console.WriteLine("histo1 fucking is null");
-                    }
-                    if (histo2 == null)
-                    {
-                        System.Console.WriteLine("histo2 fucking is null");
-                    }
                     if (histo1.Diff(histo2) > histoThr)
                     {
                         progress?.Invoke();

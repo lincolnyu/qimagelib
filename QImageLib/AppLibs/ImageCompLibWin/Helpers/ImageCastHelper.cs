@@ -39,10 +39,16 @@ namespace ImageCompLibWin.Helpers
             var bmpHeight = bmp.GetBitmapHeight();
             var pfmt = bmp.GetPixelFormat();
 
-            var bdata = bmp.LockBits(new Rectangle(0, 0, bmpWidth, bmpHeight), ImageLockMode.ReadOnly, pfmt);
-            var size = bdata.Stride * bdata.Height;
-            var buf = new byte[size];
-            Marshal.Copy(bdata.Scan0, buf, 0, size);
+            byte[] buf;
+            int stride;
+            lock(bmp)
+            {
+                var bdata = bmp.LockBits(new Rectangle(0, 0, bmpWidth, bmpHeight), ImageLockMode.ReadOnly, pfmt);
+                stride = bdata.Stride;
+                var size = stride * bdata.Height;
+                buf = new byte[size];
+                Marshal.Copy(bdata.Scan0, buf, 0, size);
+            }
 
             var bpp = Image.GetPixelFormatSize(pfmt);
             if (bpp != 24 && bpp != 32)
@@ -61,7 +67,7 @@ namespace ImageCompLibWin.Helpers
                 for (var i = 0; i < h; i++)
                 {
                     var ii = (int)(i * cr + 0.5);
-                    var pline = ii*bdata.Stride;
+                    var pline = ii * stride;
                     // TODO this is sampling, not taking mean values
                     for (var j = 0; j < w; j++)
                     {
@@ -93,7 +99,7 @@ namespace ImageCompLibWin.Helpers
                         RgbToYCbCr.RgbToY8bitBt601(r, g, b, out y);
                         yimage.Y[i, j] = y;
                     }
-                    pline += bdata.Stride;
+                    pline += stride;
                 }
                 return yimage;
             }
