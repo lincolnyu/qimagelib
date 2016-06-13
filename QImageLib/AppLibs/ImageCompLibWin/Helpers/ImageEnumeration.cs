@@ -20,5 +20,10 @@ namespace ImageCompLibWin.Helpers
         {
             return dir.GetImageFiles().Select(x => new ImageProxy(x, imageManager));
         }
+
+        public static IEnumerable<ImageProxy> GetImages(this IEnumerable<string> files, ImageManager imageManager = null)
+        {
+            return files.Select(x => new FileInfo(x)).Select(x => new ImageProxy(x, imageManager));
+        }
     }
 }

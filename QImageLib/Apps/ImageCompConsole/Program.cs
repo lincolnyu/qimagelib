@@ -7,11 +7,15 @@ using System.Collections.Generic;
 using QImageLib.Matcher;
 using ImageCompLibWin;
 using ImageCompLibWin.Helpers;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace ImageCompConsole
 {
     class Program
     {
+        const int LineLen = 118;
+
         private static DateTime _startTime;
 
         private static void Main(string[] args)
@@ -29,14 +33,30 @@ namespace ImageCompConsole
                     var path2 = args[2];
                     Comp(path1, path2);
                 }
-                else if (args[0] == "-s")
+                else if (args[0] == "-sm")
                 {
                     var dir = args[1];
                     var report = args.GetSwitchValue("-o");
                     var verbose = !args.Contains("-q");
                     var parallel = args.Contains("-p");
-                    SearchAndMatch(dir, report, verbose, parallel);
+                    var listfile = args.GetSwitchValue("-l");
+                    if (listfile != null)
+                    {
+                        SearchAndMatchInList(listfile, report, verbose, parallel);
+                    }
+                    else
+                    {
+                        SearchAndMatchInDir(dir, report, verbose, parallel);
+                    }
                 }            
+                else if (args[0] == "-s")
+                {
+                    var dir = args[1];
+                    var report = args.GetSwitchValue("-o");
+                    var verbose = !args.Contains("-q");
+                    var check = args.Contains("-c");
+                    Search(dir, report, check, verbose);
+                }
             }
             catch (Exception)
             {
@@ -45,49 +65,176 @@ namespace ImageCompConsole
             }
         }
 
-        private static void SearchAndMatch(string sdir, string report, bool verbose=false, bool parallel=false)
+        private static void Search(string sdir, string report, bool check, bool verbose)
         {
-            const int lineLen = 118;
+            var dir = new DirectoryInfo(sdir);
+            var imageEnum = dir.GetImageFiles();
+            if (check)
+            {
+                imageEnum = imageEnum.Where(x => new ImageProxy(x).IsValidY);
+            }
+            var imageFiles = imageEnum.ToList();
+            if (verbose)
+            {
+                Console.WriteLine("Collecting image files...");
+            }
+            var exportReport = !string.IsNullOrWhiteSpace(report);
+            if (verbose && exportReport)
+            {
+                ConsoleHelper.ResetInPlaceWriting(LineLen);
+                var count = 0;
+                string lastFile = null;
+                foreach (var imageFile in imageFiles)
+                {
+                    count++;
+                    if (ConsoleHelper.CanFreqPrint())
+                    {
+                        $"{count} file(s) found, last being {imageFile.Name}".InPlaceWriteToConsole();
+                    }
+                    lastFile = imageFile.Name;
+                }
+                $"{count} file(s) found, last being {lastFile}".InPlaceWriteToConsole();
+                Console.WriteLine();
+            }
+            else
+            {
+                foreach (var imageFile in imageFiles)
+                {
+                    Console.WriteLine(imageFile.FullName);
+                }
+            }
+            if (verbose)
+            {
+                Console.WriteLine("Image collection completed.");
+            }
+          
+            if (exportReport)
+            {
+                using (var sw = new StreamWriter(report))
+                {
+                    foreach (var imageFile in imageFiles)
+                    {
+                        sw.WriteLine(imageFile.FullName);
+                    }
+                }
+                if (verbose)
+                {
+                    Console.WriteLine($"List of image files is exported to '{report}'");
+                }
+            }
+        }
+
+        private static void SearchAndMatchInList(string listfile, string report, bool verbose, bool parallel)
+        {
+            var imageEnum = GetImagesFromListFile(listfile).GetImages(ImageManager.Instance);
+            SearchAndMatch(imageEnum, report, verbose, parallel);
+        }
+
+        private static IEnumerable<string> GetImagesFromListFile(string listfile)
+        {
+            using (var sr = new StreamReader(listfile))
+            {
+                while (!sr.EndOfStream)
+                {
+                    var line = sr.ReadLine();
+                    if (line == null) break;
+                    yield return line;
+                }
+            }
+        }
+
+        private static void SearchAndMatchInDir(string sdir, string report, bool verbose = false, bool parallel = false)
+        {
+            var dir = new DirectoryInfo(sdir);
+            var imageEnum = dir.GetImages(ImageManager.Instance);
+            SearchAndMatch(imageEnum, report, verbose, parallel);
+        }
+
+        private static void SearchAndMatch(IEnumerable<ImageProxy> imageEnum, string report, bool verbose=false, bool parallel=false)
+        {
             try
             {
                 if (verbose)
                 {
                     Console.WriteLine("Collecting image files...");
                 }
+                var exportReport = !string.IsNullOrWhiteSpace(report);
                 IList<ImageProxy> imageList;
-                var dir = new DirectoryInfo(sdir);
+                var invalidFiles = new List<FileInfo>();
                 if (verbose)
                 {
                     var localList = new List<ImageProxy>();
-                    var imageEnum = dir.GetImages(ImageManager.Instance);
                     var validCount = 0;
                     var totalCount = 0;
-                    ConsoleHelper.ResetInPlaceWriting(lineLen);
-                    var invalidFiles = new List<FileInfo>();
-                    foreach (var image in imageEnum)
+                    ConsoleHelper.ResetInPlaceWriting(LineLen);
+                    if (parallel)
                     {
-                        totalCount++;
-                        if (image.IsValidY)
+                        Parallel.ForEach(imageEnum, (image) =>
                         {
-                            localList.Add(image);
-                            validCount++;
-                            if (ConsoleHelper.CanFreqPrint())
+                            Interlocked.Increment(ref totalCount);
+                            if (image.IsValidY)
                             {
-                                $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
-                                ConsoleHelper.UpdateLastPrintTime();
+                                localList.Add(image);
+                                lock(localList)
+                                {
+                                    validCount++;
+                                    if (ConsoleHelper.CanFreqPrint())
+                                    {
+                                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
+                                        ConsoleHelper.UpdateLastPrintTime();
+                                    }
+                                }
                             }
-                        }
-                        else
-                        {
-                            invalidFiles.Add(image.File);
-                            if (ConsoleHelper.CanFreqPrint())
+                            else
                             {
-                                $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
-                                ConsoleHelper.UpdateLastPrintTime();
+                                lock(invalidFiles)
+                                {
+                                    invalidFiles.Add(image.File);
+                                    if (ConsoleHelper.CanFreqPrint())
+                                    {
+                                        $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
+                                        ConsoleHelper.UpdateLastPrintTime();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        foreach (var image in imageEnum)
+                        {
+                            totalCount++;
+                            if (image.IsValidY)
+                            {
+                                localList.Add(image);
+                                validCount++;
+                                if (ConsoleHelper.CanFreqPrint())
+                                {
+                                    $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
+                                    ConsoleHelper.UpdateLastPrintTime();
+                                }
+                            }
+                            else
+                            {
+                                invalidFiles.Add(image.File);
+                                if (ConsoleHelper.CanFreqPrint())
+                                {
+                                    $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
+                                    ConsoleHelper.UpdateLastPrintTime();
+                                }
                             }
                         }
                     }
+                   
                     Console.WriteLine();
+                    if (!exportReport && invalidFiles.Count > 0)
+                    {
+                        Console.WriteLine("Following files ignored");
+                        foreach (var invalid in invalidFiles)
+                        {
+                            Console.WriteLine(invalid.FullName);
+                        }
+                    }
                     Console.WriteLine("Sorting files ...");
                     localList.Sort((a, b) => a.AbsAspRatio.CompareTo(b.AbsAspRatio));
                     Console.WriteLine("Files sorted...");
@@ -95,16 +242,41 @@ namespace ImageCompConsole
                 }
                 else
                 {
-                    imageList = dir.GetImages(ImageManager.Instance).Where(x => x.IsValidY).OrderByAbsAspRatio().ToList();
+                    if (parallel)
+                    {
+                        var localList = new List<ImageProxy>();
+                        Parallel.ForEach(imageEnum, (image) =>
+                        {
+                            if (image.IsValidY)
+                            {
+                                lock(localList)
+                                {
+                                    localList.Add(image);
+                                }
+                            }
+                            else
+                            {
+                                lock (invalidFiles)
+                                {
+                                    invalidFiles.Add(image.File);
+                                }
+                            }
+                        });
+                        localList.Sort((a, b) => a.AbsAspRatio.CompareTo(b.AbsAspRatio));
+                        imageList = localList;
+                    }
+                    else
+                    {
+                        imageList = imageEnum.Where(x => x.IsValidY).OrderByAbsAspRatio().ToList();
+                    }
                 }
                 IEnumerable<SimpleImageMatch> matches;
-                var exportReport = !string.IsNullOrWhiteSpace(report);
                 if (verbose)
                 {
                     Console.WriteLine("Matching image files" + (parallel ? " in parallel" : "") + " ...");
-                    ConsoleHelper.ResetInPlaceWriting(lineLen);
+                    ConsoleHelper.ResetInPlaceWriting(LineLen);
 
-                    var total = (imageList.Count - 1) * imageList.Count / 2;
+                    var total = ((long)imageList.Count - 1) * imageList.Count / 2;
                     int tasks = 0;
                     StartProgress();
                     if (parallel)
@@ -158,6 +330,14 @@ namespace ImageCompConsole
                             var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
                             reportWriter.WriteLine(mrep);
                         }
+                        if (invalidFiles.Count > 0)
+                        {
+                            reportWriter.WriteLine("Files failed to process and ignored:");
+                            foreach (var invalid in invalidFiles)
+                            {
+                                reportWriter.WriteLine(invalid.FullName);
+                            }
+                        }
                     }
                 }
                 else
@@ -203,7 +383,7 @@ namespace ImageCompConsole
             _startTime = DateTime.UtcNow;
         }
 
-        private static void PrintProgress(int tasks, int total)
+        private static void PrintProgress(int tasks, long total)
         {
             if (ConsoleHelper.CanFreqPrint())
             {
@@ -243,8 +423,10 @@ namespace ImageCompConsole
             Console.WriteLine("ImageComp Tool for Windows (ver 1.0) -- based on QImageLib");
             Console.WriteLine("  To compare two images: ");
             Console.WriteLine("\t" + appname + " -c <path to first image> <path to second image>");
-            Console.WriteLine("  To search for similar images in subdirectories (-q to turn on quite mode)");
-            Console.WriteLine("\t" + appname + " -s <base directory> [-q] [-o <report file>]");
+            Console.WriteLine("  To find out all images files in the directory and its subdirectory (-c to check image)");
+            Console.WriteLine("\t" + appname + " -s <base directory> [-c] [-o <report file>]");
+            Console.WriteLine("  To search for similar images in the direcory and its subdirectories (-q to turn on quite mode)");
+            Console.WriteLine("\t" + appname + " -sm {<base directory>|[-l] <list file>} [-q] [-o <report file>]");
             Console.WriteLine("  To show this usage help: ");
             Console.WriteLine("\t" + appname + " --help");
         }

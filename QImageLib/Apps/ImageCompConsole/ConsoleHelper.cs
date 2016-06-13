@@ -6,7 +6,7 @@ namespace ImageCompConsole
     {
         public const int DefaultLineLength = 78;
 
-        public readonly static TimeSpan DefaultMinPrintInterval = TimeSpan.FromMilliseconds(1000);
+        public readonly static TimeSpan DefaultMinPrintInterval = TimeSpan.FromMilliseconds(200);
 
         public static int LastInPlaceWriteLen { get; private set; }
 

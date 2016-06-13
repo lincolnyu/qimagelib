@@ -31,6 +31,7 @@ namespace QImageLib.Helpers
         /// <returns>The absolute aspect ratio</returns>
         public static double GetAbsAspectRatio(int width, int height)
         {
+            if (width <= 0 || height <= 0) return 0;
             return width < height ? (double)height / width : (double)width / height;
         }
     }

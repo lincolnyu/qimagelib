@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using QImageLib.Conversions;
 using QImageLib.Images;
 
@@ -13,11 +11,10 @@ namespace ImageCompLibWin.Helpers
         ///  Returns true if the bitmap can be successfully converted to YImage
         ///  It must be consistent with the behaviour of GetYImage()
         /// </summary>
-        /// <param name="bmp">The bitmap to test</param>
+        /// <param name="bpp">The bpp of the bitmap</param>
         /// <returns>True if YImage convertible</returns>
-        public static bool ValidateY(this Bitmap bmp)
+        public static bool ValidateY(int bpp)
         {
-            var bpp = Image.GetPixelFormatSize(bmp.PixelFormat);
             return bpp == 24 || bpp == 32;
         }
 
@@ -38,17 +35,9 @@ namespace ImageCompLibWin.Helpers
             var bmpWidth = bmp.GetBitmapWidth();
             var bmpHeight = bmp.GetBitmapHeight();
             var pfmt = bmp.GetPixelFormat();
-
-            byte[] buf;
             int stride;
-            lock(bmp)
-            {
-                var bdata = bmp.LockBits(new Rectangle(0, 0, bmpWidth, bmpHeight), ImageLockMode.ReadOnly, pfmt);
-                stride = bdata.Stride;
-                var size = stride * bdata.Height;
-                buf = new byte[size];
-                Marshal.Copy(bdata.Scan0, buf, 0, size);
-            }
+            byte[] buf;
+            bmp.GetBuffer(bmpWidth, bmpHeight, pfmt, out buf, out stride); 
 
             var bpp = Image.GetPixelFormatSize(pfmt);
             if (bpp != 24 && bpp != 32)
