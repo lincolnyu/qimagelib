@@ -1,6 +1,4 @@
-﻿using ImageCompLibWin.Threading;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 
 namespace ImageCompLibWin
@@ -11,7 +9,6 @@ namespace ImageCompLibWin
         public const int DefaultMaxAllowedTempImages = 16;
 
         private readonly Semaphore _tempImageSemaphore;
-        private readonly SimpleLocker _requestLocker = new SimpleLocker();
 
         public ImageCache(int quota = DefaultQuota, int maxAllowedTempImages = DefaultMaxAllowedTempImages) : this(quota, quota / 2, maxAllowedTempImages)
         {
