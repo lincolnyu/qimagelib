@@ -149,6 +149,18 @@ namespace ImageCompConsole
             var imageEnum = dir.GetImages(ImageManager.Instance);
             SearchAndMatch(imageEnum, report, verbose, parallel);
         }
+        
+        private static bool TestY(ImageProxy image)
+        {
+            if (image.HasFastHisto)
+            {
+                return image.IsValidY;
+            }
+            else
+            {
+                return image.YImage != null;
+            }
+        }
 
         private static void SearchAndMatch(IEnumerable<ImageProxy> imageEnum, string report, bool verbose=false, bool parallel=false)
         {
@@ -172,7 +184,7 @@ namespace ImageCompConsole
                         Parallel.ForEach(imageEnum, (image) =>
                         {
                             Interlocked.Increment(ref totalCount);
-                            if (image.IsValidY)
+                            if (TestY(image))
                             {
                                 localList.Add(image);
                                 lock(localList)
@@ -183,6 +195,7 @@ namespace ImageCompConsole
                                         $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
                                         ConsoleHelper.UpdateLastPrintTime();
                                     }
+                                    $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
                                 }
                             }
                             else
@@ -195,6 +208,7 @@ namespace ImageCompConsole
                                         $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
                                         ConsoleHelper.UpdateLastPrintTime();
                                     }
+                                    $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
                                 }
                             }
                         });
@@ -204,7 +218,7 @@ namespace ImageCompConsole
                         foreach (var image in imageEnum)
                         {
                             totalCount++;
-                            if (image.IsValidY)
+                            if (TestY(image))
                             {
                                 localList.Add(image);
                                 validCount++;
@@ -213,6 +227,7 @@ namespace ImageCompConsole
                                     $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
                                     ConsoleHelper.UpdateLastPrintTime();
                                 }
+                                $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
                             }
                             else
                             {
@@ -222,6 +237,7 @@ namespace ImageCompConsole
                                     $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
                                     ConsoleHelper.UpdateLastPrintTime();
                                 }
+                                $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
                             }
                         }
                     }
@@ -247,7 +263,7 @@ namespace ImageCompConsole
                         var localList = new List<ImageProxy>();
                         Parallel.ForEach(imageEnum, (image) =>
                         {
-                            if (image.IsValidY)
+                            if (TestY(image))
                             {
                                 lock(localList)
                                 {
@@ -267,7 +283,7 @@ namespace ImageCompConsole
                     }
                     else
                     {
-                        imageList = imageEnum.Where(x => x.IsValidY).OrderByAbsAspRatio().ToList();
+                        imageList = imageEnum.Where(x => TestY(x)).OrderByAbsAspRatio().ToList();
                     }
                 }
                 IEnumerable<SimpleImageMatch> matches;
@@ -298,7 +314,9 @@ namespace ImageCompConsole
                             PrintProgress(tasks, total);
                         }).OrderBy(x => x.Mse).ToList();
                     }
-                    
+
+                    PrintProgress(total, total, true); // print the 100%
+
                     Console.WriteLine();
                     Console.WriteLine("Image matching completed.");
                     if (exportReport)
@@ -383,9 +401,9 @@ namespace ImageCompConsole
             _startTime = DateTime.UtcNow;
         }
 
-        private static void PrintProgress(int tasks, long total)
+        private static void PrintProgress(long tasks, long total, bool forcePrint=false)
         {
-            if (ConsoleHelper.CanFreqPrint())
+            if (forcePrint || ConsoleHelper.CanFreqPrint())
             {
                 var curr = DateTime.UtcNow;
                 var elapsed = curr - _startTime;

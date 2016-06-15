@@ -76,10 +76,6 @@ namespace ImageCompLibWin
 
         public ImageCache Cache => Manager?.Cache;
 
-        public int HistoSize => Manager?.HistoSize ?? ImageManager.DefaultHistoSize;
-
-        public int HistoTotal => Manager?.HistoTotal ?? ImageManager.DefaultHistoTotal;
-
         /// <summary>
         ///  The image file
         /// </summary>
@@ -89,7 +85,15 @@ namespace ImageCompLibWin
 
         public YConfFlags YConvFlag { get; private set; }
 
-        public bool RetainBitmap { get; set; }
+        public int HistoSize => Manager?.FastHistoSize ?? ImageManager.DefaultFastHistoSize;
+
+        public int HistoSum => Manager?.FastHistoSum ?? ImageManager.DefaultFastHistoSum;
+
+        public bool RetainBitmap => Manager?.SuppressBitmapRetention == false;
+
+        public bool HasFastHisto => Manager?.SuppressFastHisto == false;
+
+        public int CrunchSize => Manager?.CrunchSize ?? int.MaxValue;
 
         /// <summary>
         ///  return the backing field _bitmap or get a temporary one
@@ -132,7 +136,7 @@ namespace ImageCompLibWin
         {
             get
             {
-                if (Manager?.SuppressFastHisto == true)
+                if (!HasFastHisto)
                 {
                     return null;
                 }
@@ -147,7 +151,6 @@ namespace ImageCompLibWin
                         }
                         LoadFastHisto();
                     }
-                    System.Diagnostics.Debug.Assert(_fastHisto != null);
                     return _fastHisto;
                 }
             }
@@ -210,8 +213,10 @@ namespace ImageCompLibWin
             if (State == States.ImageInvalid) return default(T);
             if (State == States.Init)
             {
-                lock(this)
+                lock (this)
+                {
                     InitLoadBitmapInfo();
+                }
             }
             return returnBackingField();
         }
@@ -324,15 +329,15 @@ namespace ImageCompLibWin
         private YImage GetYImageFromBitmapToReleaseIfNeeded(BitmapWrapper bmp)
         {
             if (bmp == null) return null;
-            if (RetainBitmap)
+            try
             {
                 return TryConvY(bmp);
             }
-            else
+            finally
             {
-                using (bmp)
+                if (!RetainBitmap)
                 {
-                    return TryConvY(bmp);
+                    bmp.Dispose();
                 }
             }
         }
@@ -343,9 +348,12 @@ namespace ImageCompLibWin
             try
             {
                 ysize = GetYImageSize();
-                Cache?.Request(this, ysize); // TODO exception from here...
-                _yimage = bmp.Bitmap.GetYImage();
-                if (Manager?.SuppressFastHisto != true)
+                if (!YImageToKeep())
+                {
+                    Cache?.Request(this, ysize); // TODO exception from here...
+                }
+                _yimage = bmp.Content.GetYImage(CrunchSize);
+                if (HasFastHisto)
                 {
                     LoadFastHisto();
                 }
@@ -394,7 +402,7 @@ namespace ImageCompLibWin
             {
                 Cache.Release(this, size);
             }
-            else if (size > 0)
+            else if (size > 0 && !YImageToKeep())
             {
                 Cache.ReleasePartial(this, size);
             }
@@ -475,9 +483,9 @@ namespace ImageCompLibWin
         private BitmapWrapper GetBitmapAndLoadItsInfo(bool retain)
         {
             var bmp = GetBitmap(retain);
-            _width = bmp.Bitmap.GetBitmapWidth();
-            _height = bmp.Bitmap.GetBitmapHeight();
-            var pfmt = bmp.Bitmap.GetPixelFormat();
+            _width = bmp.Content.GetBitmapWidth();
+            _height = bmp.Content.GetBitmapHeight();
+            var pfmt = bmp.Content.GetPixelFormat();
             _bpp = Image.GetPixelFormatSize(pfmt);
             _absAspRatio = ImagePropertiesHelper.GetAbsAspectRatio(_width, _height);
             if (_width == 0 || _height == 0)
@@ -520,7 +528,7 @@ namespace ImageCompLibWin
             {
                 _fastHisto = new int[HistoSize];
                 _fastHisto.ClearFastHisto();
-                _fastHisto.GenerateFastHistoFromYImage(_yimage, HistoTotal);
+                _fastHisto.GenerateFastHistoFromYImage(_yimage, HistoSum);
             }
         }
     }

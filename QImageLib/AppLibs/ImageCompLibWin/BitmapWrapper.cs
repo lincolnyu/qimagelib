@@ -13,21 +13,35 @@ namespace ImageCompLibWin
         public BitmapWrapper(Bitmap bitmap, ImageCache cache)
         {
             cache?.RequestTempImage();
-            Bitmap = bitmap;
+            Content = bitmap;
             CacheAwaitingTemp = cache;
         }
 
-        public Bitmap Bitmap { get; private set; }
+        ~BitmapWrapper()
+        {
+            Dispose(false);
+        }
+
+        public Bitmap Content { get; private set; }
 
         public ImageCache CacheAwaitingTemp { get; }
 
         public void Dispose()
         {
-            if (Bitmap != null)
+            Dispose(true);
+        }
+
+        private void Dispose(bool dispose)
+        {
+            if (Content != null)
             {
                 CacheAwaitingTemp?.ReleaseTempImage();
-                Bitmap.Dispose();
-                Bitmap = null;
+                if (dispose)
+                {
+                    Content.Dispose();
+                    Content = null;
+                    GC.SuppressFinalize(this);
+                }
             }
         }
     }

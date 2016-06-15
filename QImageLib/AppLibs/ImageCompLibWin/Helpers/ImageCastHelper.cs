@@ -53,22 +53,35 @@ namespace ImageCompLibWin.Helpers
                 var h = (int)Math.Round(bmpHeight / cr);
                 var yimage = new YImage(h, w);
 
+                var iistart = 0;
                 for (var i = 0; i < h; i++)
                 {
-                    var ii = (int)(i * cr + 0.5);
-                    var pline = ii * stride;
+                    var iiend = (i + 1) * bmpHeight / h;
                     // TODO this is sampling, not taking mean values
+                    var jjstart = 0;
                     for (var j = 0; j < w; j++)
                     {
-                        var jj = (int)(j * cr + 0.5);
-                        var p = pline + jj * bypp;
-                        var r = buf[p];
-                        var g = buf[p+1];
-                        var b = buf[p+2];
-                        byte y;
-                        RgbToYCbCr.RgbToY8bitBt601(r, g, b, out y);
-                        yimage.Y[i, j] = y;                        
+                        var jjend = (j + 1) * bmpWidth / w;
+                        var ysum = 0;
+                        for (var ii = iistart; ii < iiend; ii++)
+                        {
+                            var pline = ii * stride;
+                            for (var jj = jjstart; jj < jjend; jj++)
+                            {
+                                var p = pline + jj * bypp;
+                                var r = buf[p];
+                                var g = buf[p + 1];
+                                var b = buf[p + 2];
+                                byte y;
+                                RgbToYCbCr.RgbToY8bitBt601(r, g, b, out y);
+                                ysum += y;
+                            }
+                        }
+                        ysum /= (iiend - iistart) * (jjend - jjstart);
+                        yimage.Y[i, j] = (byte)ysum;
+                        jjstart = jjend;
                     }
+                    iistart = iiend;
                 }
                 return yimage;
             }

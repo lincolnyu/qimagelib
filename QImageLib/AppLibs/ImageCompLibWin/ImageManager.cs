@@ -2,25 +2,34 @@
 {
     public class ImageManager
     {
-        public const int DefaultHistoSize = 8;
-        public const int DefaultHistoTotal = 256;
+        public const int DefaultFastHistoSize = 8;
+        public const int DefaultFastHistoSum = 256;
+        public const int DefaultCrunchSize = 64;
 
-        public ImageManager(ImageCache cache, int histoSize = DefaultHistoSize,
-            int histoTotal = DefaultHistoTotal)
+        public ImageManager(ImageCache cache, bool suppressFastHisto = true,
+            int crunchSize = DefaultCrunchSize, bool suppressBitmapRetention = true,
+            int histoSize = DefaultFastHistoSize, int histoTotal = DefaultFastHistoSum)
         {
             Cache = cache;
-            HistoSize = histoSize;
-            HistoTotal = histoTotal;
+            FastHistoSize = histoSize;
+            FastHistoSum = histoTotal;
+            CrunchSize = DefaultCrunchSize;
+            SuppressFastHisto = suppressFastHisto;
+            SuppressBitmapRetention = suppressBitmapRetention;
         }
 
         public static ImageManager Instance { get; } = new ImageManager(ImageCache.Instance);
 
-        public ImageCache Cache { get;  }
+        public ImageCache Cache { get; }
 
-        public int HistoTotal { get; }
+        public int FastHistoSum { get; }
 
-        public int HistoSize { get; }
+        public int FastHistoSize { get; }
 
-        public bool SuppressFastHisto { get; set; }
+        public bool SuppressFastHisto { get; }
+
+        public int CrunchSize { get; }
+
+        public bool SuppressBitmapRetention { get; }
     }
 }
