@@ -41,6 +41,7 @@ namespace QImageLib.Statistics
 
         public static int Diff(this int[] histo1, int[] histo2)
         {
+            if (histo1 == null || histo2 == null) return int.MaxValue;
             var sumd = 0;
             for (var i = 0; i < histo1.Length; i++)
             {

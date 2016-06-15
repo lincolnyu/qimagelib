@@ -5,6 +5,7 @@ using ImageCompLibWin.Helpers;
 using QImageLib.Images;
 using QImageLib.Helpers;
 using QImageLib.Statistics;
+using System.Threading;
 
 namespace ImageCompLibWin
 {
@@ -41,6 +42,12 @@ namespace ImageCompLibWin
             Succeeded,
             Failed
         }
+
+        /// <summary>
+        ///  If an image's maximum edge length is no more than below the image's
+        ///  Y will not be released
+        /// </summary>
+        public const int MaxYImageSizeToKeep = 64;
 
         public delegate void ImageInfoReadyEventHandler(ImageProxy sender);
 
@@ -92,14 +99,20 @@ namespace ImageCompLibWin
         {
             get
             {
-                switch (State)
+                lock (this)
                 {
-                    case States.Init:
-                        return InitGetBitmap();
-                    case States.ImageValid:
-                        return ImageValidGetBitmap();
+                    BitmapWrapper result = null;
+                    switch (State)
+                    {
+                        case States.Init:
+                            result = InitGetBitmap();
+                            break;
+                        case States.ImageValid:
+                            result = ImageValidGetBitmap();
+                            break;
+                    }
+                    return result;
                 }
-                return null;
             }
         }
 
@@ -107,14 +120,11 @@ namespace ImageCompLibWin
         {
             get
             {
-                switch (State)
+                lock(this)
                 {
-                    case States.Init:
-                        return InitGetYImage();
-                    case States.ImageValid:
-                        return ImageValidGetYImage();
+                    var result = LoadYImage();
+                    return result;
                 }
-                return null;
             }
         }
 
@@ -122,14 +132,27 @@ namespace ImageCompLibWin
         {
             get
             {
-                if (_fastHisto == null)
+                if (Manager?.SuppressFastHisto == true)
                 {
-                    var dummy = YImage;
+                    return null;
                 }
-                return _fastHisto;
+                lock(this)
+                {
+                    if (_fastHisto == null)
+                    {
+                        LoadYImage();
+                        if (_yimage == null)
+                        {
+                            return null;
+                        }
+                        LoadFastHisto();
+                    }
+                    System.Diagnostics.Debug.Assert(_fastHisto != null);
+                    return _fastHisto;
+                }
             }
         }
-        
+
         public string Path => File.FullName;
 
         public int Width => GetImageProperty(() => _width);
@@ -158,6 +181,24 @@ namespace ImageCompLibWin
             }
         }
 
+        private YImage LoadYImage()
+        {
+            switch (State)
+            {
+                case States.Init:
+                    return InitGetYImage();
+                case States.ImageValid:
+                    return ImageValidGetYImage();
+            }
+            return null;
+        }
+
+        private bool YImageToKeep()
+        {
+            return _width <= MaxYImageSizeToKeep && _height <= MaxYImageSizeToKeep;
+        }
+
+
         /// <summary>
         ///  Load bitmap and its info for bitmap properties of this instance
         /// </summary>
@@ -169,7 +210,8 @@ namespace ImageCompLibWin
             if (State == States.ImageInvalid) return default(T);
             if (State == States.Init)
             {
-                InitLoadBitmapInfo();
+                lock(this)
+                    InitLoadBitmapInfo();
             }
             return returnBackingField();
         }
@@ -212,7 +254,7 @@ namespace ImageCompLibWin
                 }
                 else
                 {
-                    bmp = GetBitmap();
+                    bmp = GetBitmap(false);
                 }
                 State = States.ImageValid;
                 return bmp;
@@ -245,13 +287,13 @@ namespace ImageCompLibWin
                 {
                     return _bitmap;
                 }
-                else if (RetainBitmap)
+                if (RetainBitmap)
                 {
                     return LoadBitmapAndItsInfo();
                 }
                 else
                 {
-                    return GetBitmap();
+                    return GetBitmap(false);
                 }
             }
             catch (Exception)
@@ -297,18 +339,22 @@ namespace ImageCompLibWin
 
         private YImage TryConvY(BitmapWrapper bmp)
         {
+            int ysize = 0;
             try
             {
-                var ysize = GetYImageSize();
-                Cache?.Request(this, ysize);
+                ysize = GetYImageSize();
+                Cache?.Request(this, ysize); // TODO exception from here...
                 _yimage = bmp.Bitmap.GetYImage();
-                LoadFastHisto();
+                if (Manager?.SuppressFastHisto != true)
+                {
+                    LoadFastHisto();
+                }
                 YConvFlag = YConfFlags.Succeeded;
                 return _yimage;
             }
             catch (Exception)
             {
-                ReleaseYImage();
+                ReleaseYImageOnError(ysize);
                 _fastHisto = null;
                 YConvFlag = YConfFlags.Failed;
                 // state remains unchanged
@@ -318,16 +364,18 @@ namespace ImageCompLibWin
 
         public void Release()
         {
-            lock(this)
+            lock (this)
             {
                 var totalSize = 0;
                 if (_bitmap != null)
                 {
                     totalSize += GetBitmapSize();
+                    // NOTE we dont dispose the bitmap here
+                    // as the user may still need it for a short period hopefully
                     _bitmap.Dispose();
                     _bitmap = null;
                 }
-                if (_yimage != null)
+                if (_yimage != null && !YImageToKeep())
                 {
                     totalSize += GetYImageSize();
                     _yimage = null;
@@ -339,9 +387,22 @@ namespace ImageCompLibWin
             }
         }
 
+        private void ReleaseYImageOnError(int size)
+        {
+            _yimage = null;
+            if (_bitmap == null)
+            {
+                Cache.Release(this, size);
+            }
+            else if (size > 0)
+            {
+                Cache.ReleasePartial(this, size);
+            }
+        }
+
         public void ReleaseYImage()
         {
-            lock(this)
+            lock (this)
             {
                 var totalSize = 0;
                 if (_yimage != null)
@@ -350,13 +411,13 @@ namespace ImageCompLibWin
                     _yimage = null;
                 }
                 if (Cache == null) return;
-                if (_bitmap != null && _yimage != null)
+                if (_bitmap == null && _yimage == null)
                 {
                     Cache.Release(this, totalSize);
                 }
                 else if (totalSize > 0)
                 {
-                    Cache.ReleasePartial(totalSize);
+                    Cache.ReleasePartial(this, totalSize);
                 }
             }
         }
@@ -372,13 +433,13 @@ namespace ImageCompLibWin
                     _bitmap = null;
                 }
                 if (Cache == null) return;
-                if (_bitmap != null && _yimage != null)
+                if (_bitmap == null && _yimage == null)
                 {
                     Cache.Release(this, totalSize);
                 }
                 else if (totalSize > 0)
                 {
-                    Cache.ReleasePartial(totalSize);
+                    Cache.ReleasePartial(this, totalSize);
                 }
             }
         }
@@ -401,9 +462,9 @@ namespace ImageCompLibWin
             return _width * _height;
         }
 
-        private BitmapWrapper GetBitmap()
+        private BitmapWrapper GetBitmap(bool retain)
         {
-            return new BitmapWrapper((Bitmap)Image.FromFile(File.FullName), RetainBitmap ? null : Cache);
+            return new BitmapWrapper((Bitmap)Image.FromFile(File.FullName), retain ? null : Cache);
         }
 
         public void ReleaseTempBitmap()
@@ -411,9 +472,9 @@ namespace ImageCompLibWin
             Cache?.ReleaseTempImage();
         }
         
-        private BitmapWrapper GetBitmapAndLoadItsInfo()
+        private BitmapWrapper GetBitmapAndLoadItsInfo(bool retain)
         {
-            var bmp = GetBitmap();
+            var bmp = GetBitmap(retain);
             _width = bmp.Bitmap.GetBitmapWidth();
             _height = bmp.Bitmap.GetBitmapHeight();
             var pfmt = bmp.Bitmap.GetPixelFormat();
@@ -434,7 +495,7 @@ namespace ImageCompLibWin
 
         private void LoadBitmapForInfoOnly()
         {
-            using (GetBitmapAndLoadItsInfo())
+            using (GetBitmapAndLoadItsInfo(false))
             {
             }
         }
@@ -446,18 +507,21 @@ namespace ImageCompLibWin
         /// <returns></returns>
         private BitmapWrapper LoadBitmapAndItsInfo()
         {
-            var bmp = GetBitmapAndLoadItsInfo();
+            var bmp = GetBitmapAndLoadItsInfo(true);
             var bmpSize = GetBitmapSize();
-            Cache?.Request(this, bmpSize);
+            Cache?.Request(this, bmpSize); // what if this throws an exception
             _bitmap = bmp;
             return bmp;
         }
 
         private void LoadFastHisto()
         {
-            _fastHisto = new int[HistoSize];
-            _fastHisto.ClearFastHisto();
-            _fastHisto.GenerateFastHistoFromYImage(_yimage, HistoTotal);
+            if (_fastHisto == null) // do only once
+            {
+                _fastHisto = new int[HistoSize];
+                _fastHisto.ClearFastHisto();
+                _fastHisto.GenerateFastHistoFromYImage(_yimage, HistoTotal);
+            }
         }
     }
 }

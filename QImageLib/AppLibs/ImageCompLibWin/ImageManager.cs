@@ -20,5 +20,7 @@
         public int HistoTotal { get; }
 
         public int HistoSize { get; }
+
+        public bool SuppressFastHisto { get; set; }
     }
 }
