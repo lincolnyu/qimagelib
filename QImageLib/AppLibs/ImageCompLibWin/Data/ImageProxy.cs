@@ -5,9 +5,8 @@ using ImageCompLibWin.Helpers;
 using QImageLib.Images;
 using QImageLib.Helpers;
 using QImageLib.Statistics;
-using System.Threading;
 
-namespace ImageCompLibWin
+namespace ImageCompLibWin.Data
 {
     public class ImageProxy
     {

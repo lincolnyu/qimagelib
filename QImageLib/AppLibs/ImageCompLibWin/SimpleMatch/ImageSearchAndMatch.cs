@@ -4,8 +4,9 @@ using QImageLib.Matcher;
 using QImageLib.Statistics;
 using System.Threading.Tasks;
 using ImageCompLibWin.Helpers;
+using ImageCompLibWin.Data;
 
-namespace ImageCompLibWin
+namespace ImageCompLibWin.SimpleMatch
 {
     public static class ImageSearchAndMatch
     {

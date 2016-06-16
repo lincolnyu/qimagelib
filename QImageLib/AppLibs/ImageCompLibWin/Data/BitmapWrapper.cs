@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 
-namespace ImageCompLibWin
+namespace ImageCompLibWin.Data
 {
     public class BitmapWrapper : IDisposable
     {

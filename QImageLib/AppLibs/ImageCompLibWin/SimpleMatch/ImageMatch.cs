@@ -1,4 +1,6 @@
-﻿namespace ImageCompLibWin
+﻿using ImageCompLibWin.Data;
+
+namespace ImageCompLibWin.SimpleMatch
 {
     public class SimpleImageMatch
     {

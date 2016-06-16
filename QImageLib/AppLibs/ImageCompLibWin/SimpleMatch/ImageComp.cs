@@ -2,7 +2,7 @@
 using QImageLib.Matcher;
 using System.Drawing;
 
-namespace ImageCompLibWin
+namespace ImageCompLibWin.SimpleMatch
 {
     public static class ImageComp
     {

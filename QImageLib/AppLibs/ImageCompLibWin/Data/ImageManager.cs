@@ -1,4 +1,4 @@
-﻿namespace ImageCompLibWin
+﻿namespace ImageCompLibWin.Data
 {
     public class ImageManager
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 
-namespace ImageCompLibWin
+namespace ImageCompLibWin.Data
 {
     public class ImageCache
     {

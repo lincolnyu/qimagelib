@@ -41,17 +41,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BitmapWrapper.cs" />
+    <Compile Include="Data\BitmapWrapper.cs" />
     <Compile Include="Helpers\BitmapHelper.cs" />
     <Compile Include="Helpers\ImageCastHelper.cs" />
     <Compile Include="Helpers\ImageEnumeration.cs" />
-    <Compile Include="ImageComp.cs" />
-    <Compile Include="ImageManager.cs" />
-    <Compile Include="ImageMatch.cs" />
-    <Compile Include="ImageCache.cs" />
-    <Compile Include="ImageSearchAndMatch.cs" />
+    <Compile Include="SimpleMatch\ImageComp.cs" />
+    <Compile Include="Data\ImageManager.cs" />
+    <Compile Include="SimpleMatch\ImageMatch.cs" />
+    <Compile Include="Data\ImageCache.cs" />
+    <Compile Include="SimpleMatch\ImageSearchAndMatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ImageProxy.cs" />
+    <Compile Include="Data\ImageProxy.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\QImageLib.Matcher\QImageLib.Matcher.csproj">

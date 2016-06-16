@@ -44,7 +44,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConsoleHelper.cs" />
+    <Compile Include="Global\Common.cs" />
+    <Compile Include="Helpers\ConsoleHelper.cs" />
+    <Compile Include="Subprograms\Subprogram.cs" />
+    <Compile Include="Subprograms\ImageSimpleComp.cs" />
+    <Compile Include="Subprograms\SearchImageFiles.cs" />
+    <Compile Include="Subprograms\ImageSimpleSearchAndMatch.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
