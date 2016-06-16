@@ -34,5 +34,22 @@ namespace ImageCompConsole.Global
                 ConsoleHelper.UpdateLastPrintTime();
             }
         }
+
+        public static void PrintException(Exception e, bool verbose)
+        {
+            Console.WriteLine($"Something went wrong.");
+            if (verbose)
+            {
+                var indent = "";
+                do
+                {
+                    Console.WriteLine($"{indent}Error type: {e.GetType().Name}");
+                    Console.WriteLine($"{indent}Error details: {e.Message}");
+                    Console.WriteLine($"{indent}Stack trace: {e.StackTrace}");
+                    e = e.InnerException;
+                    indent += " ";
+                } while (e != null);
+            }
+        }
     }
 }

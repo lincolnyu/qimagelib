@@ -160,7 +160,6 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        
         private static void PreprocessVerbosePostSortAndPrint(bool exportReport, List<ImageProxy> imageList, IList<FileInfo> invalidFiles)
         {
             Console.WriteLine();
@@ -212,12 +211,12 @@ namespace ImageCompConsole.Subprograms
                 {
                     foreach (var match in matches)
                     {
-                        var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
+                        var mrep = $"{match.Image1.Path}|{match.Image2.Path}:{match.Mse}";
                         reportWriter.WriteLine(mrep);
                     }
                     if (invalidFiles.Count > 0)
                     {
-                        reportWriter.WriteLine("Files failed to process and ignored:");
+                        reportWriter.WriteLine(">>>>>>>>>> Ignored Files >>>>>>>>>>");
                         foreach (var invalid in invalidFiles)
                         {
                             reportWriter.WriteLine(invalid.FullName);
@@ -231,7 +230,7 @@ namespace ImageCompConsole.Subprograms
                 if (verbose) Console.WriteLine("Printing matched images...");
                 foreach (var match in matches)
                 {
-                    var mrep = $"{match.Image1.Path},{match.Image2.Path},{match.Mse}";
+                    var mrep = $"{match.Image1.Path}|{match.Image2.Path}:{match.Mse}";
                     Console.WriteLine(mrep);
                 }
                 if (verbose) Console.WriteLine("End of matching images");
@@ -329,19 +328,7 @@ namespace ImageCompConsole.Subprograms
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Something went wrong.");
-                if (verbose)
-                {
-                    var indent = "";
-                    do
-                    {
-                        Console.WriteLine($"{indent}Error type: {e.GetType().Name}");
-                        Console.WriteLine($"{indent}Error details: {e.Message}");
-                        Console.WriteLine($"{indent}Stack trace: {e.StackTrace}");
-                        e = e.InnerException;
-                        indent += " ";
-                    } while (e != null);
-                }
+                Common.PrintException(e, verbose);
             }
         }
     }
