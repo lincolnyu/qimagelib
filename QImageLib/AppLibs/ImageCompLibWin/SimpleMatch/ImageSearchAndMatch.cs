@@ -17,6 +17,18 @@ namespace ImageCompLibWin.SimpleMatch
 
         public delegate void ParallelProgressReport();
 
+        private class HastyImage
+        {
+            public HastyImage(ImageProxy image)
+            {
+                WrappedImage = image;
+            }
+
+            public ImageProxy WrappedImage { get; }
+
+            public bool Excluded { get; set; }
+        }
+
         public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
             double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr,
             double histoThr = DefaultHistoThr)
@@ -54,7 +66,7 @@ namespace ImageCompLibWin.SimpleMatch
                     if (histo != true && mse != null)
                     {
                         using (var bmp1 = image1.Bitmap)
-                            using (var bmp2 = image2.Bitmap)
+                        using (var bmp2 = image2.Bitmap)
                         {
                             var y1 = bmp1.Content.GetYImage();
                             var y2 = bmp2.Content.GetYImage();
@@ -66,6 +78,68 @@ namespace ImageCompLibWin.SimpleMatch
                         yield return new SimpleImageMatch(image1, image2, mse.Value);
                     }
 
+                    progress?.Invoke(i, j);
+                }
+                image1.Release();
+            }
+        }
+
+        public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImagesHasty(this IEnumerable<ImageProxy> images, ProgressReport progress = null,
+            double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr,
+            double histoThr = DefaultHistoThr)
+        {
+            bool? histo = null;
+            var hastyList = images.Select(x => new HastyImage(x)).ToList();
+            for (var i = 0; i < hastyList.Count - 1; i++)
+            {
+                var hasty1 = hastyList[i];
+                if (hasty1.Excluded) continue;
+                var image1 = hasty1.WrappedImage;
+                var histo1 = image1.FastHisto;
+                var r1 = image1.AbsAspRatio;
+                if (histo == null)
+                {
+                    histo = image1.HasFastHisto;
+                }
+                for (var j = i + 1; j < hastyList.Count; j++)
+                {
+                    var hasty2 = hastyList[j];
+                    if (hasty2.Excluded) continue;
+                    var image2 = hasty2.WrappedImage;
+                    var r2 = image2.AbsAspRatio;
+                    if (r2 > r1 * aspThr)
+                    {
+                        progress?.Invoke(i, j);
+                        break;
+                    }
+                    if (histo == true)
+                    {
+                        var histo2 = image2.FastHisto;
+                        if (histo1.Diff(histo2) > histoThr)
+                        {
+                            progress?.Invoke(i, j);
+                            continue;
+                        }
+                    }
+
+                    var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                    if (histo != true && mse != null)
+                    {
+                        using (var bmp1 = image1.Bitmap)
+                        using (var bmp2 = image2.Bitmap)
+                        {
+                            var y1 = bmp1.Content.GetYImage();
+                            var y2 = bmp2.Content.GetYImage();
+                            mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                        }
+                    }
+                    if (mse != null)
+                    {
+                        hasty1.Excluded = true;
+                        hasty2.Excluded = true;
+                        yield return new SimpleImageMatch(image1, image2, mse.Value);
+                        image2.Release();
+                    }
                     progress?.Invoke(i, j);
                 }
                 image1.Release();
