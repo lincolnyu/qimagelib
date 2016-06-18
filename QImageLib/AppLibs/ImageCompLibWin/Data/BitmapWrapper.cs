@@ -13,8 +13,8 @@ namespace ImageCompLibWin.Data
         public BitmapWrapper(Bitmap bitmap, ImageCache cache)
         {
             cache?.RequestTempImage();
-            Content = bitmap;
             CacheAwaitingTemp = cache;
+            Content = bitmap;
         }
 
         ~BitmapWrapper()

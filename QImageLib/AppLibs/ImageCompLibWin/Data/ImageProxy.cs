@@ -183,6 +183,22 @@ namespace ImageCompLibWin.Data
             }
         }
 
+        /// <summary>
+        ///  Try to get a bitmap that's known to be valid for specified times of failure
+        /// </summary>
+        /// <param name="maxAttempts">The maximum number of attempts</param>
+        /// <returns>The bitmap</returns>
+        public BitmapWrapper TryGetBitmap(int maxAttempts = 3)
+        {
+            System.Diagnostics.Debug.Assert(State == States.ImageValid);
+            BitmapWrapper bmp = null;
+            do
+            {
+                bmp = Bitmap;
+            } while (bmp == null && maxAttempts-- > 0);
+            return bmp;
+        }
+
         private YImage LoadYImage()
         {
             switch (State)
@@ -471,7 +487,22 @@ namespace ImageCompLibWin.Data
 
         private BitmapWrapper GetBitmap(bool retain)
         {
-            return new BitmapWrapper((Bitmap)Image.FromFile(File.FullName), retain ? null : Cache);
+            Bitmap bmp = null; 
+            try
+            {
+                bmp = (Bitmap)Image.FromFile(File.FullName);
+                return new BitmapWrapper(bmp, retain ? null : Cache);
+            }
+            catch (Exception) 
+            {
+                // Any exception occurred when loading bmp or obtaining a wrapper,
+                // we dispose the bitmap for a timing memory deallcoation
+                if (bmp != null)
+                {
+                    bmp.Dispose();
+                }
+                return null;
+            }
         }
 
         public void ReleaseTempBitmap()

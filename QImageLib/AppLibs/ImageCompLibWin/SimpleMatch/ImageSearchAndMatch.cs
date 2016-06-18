@@ -184,12 +184,19 @@ namespace ImageCompLibWin.SimpleMatch
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
                     if (histo != true && mse != null)
                     {
-                        using (var bmp1 = image1.Bitmap)
-                        using (var bmp2 = image2.Bitmap)
+                        using (var bmp1 = image1.TryGetBitmap())
+                        using (var bmp2 = image2.TryGetBitmap())
                         {
                             var y1 = bmp1.Content.GetYImage();
                             var y2 = bmp2.Content.GetYImage();
-                            mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                            if (y1 != null && y2 != null)
+                            {
+                                mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                            }
+                            else
+                            {
+                                mse = null;
+                            }
                         }
                     }
                     if (mse != null)
