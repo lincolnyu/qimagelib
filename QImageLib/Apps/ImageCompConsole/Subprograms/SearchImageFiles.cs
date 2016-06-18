@@ -1,9 +1,10 @@
-﻿using ImageCompConsole.Global;
-using ImageCompLibWin.Data;
-using ImageCompLibWin.Helpers;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
+using ImageCompConsole.Global;
+using ImageCompLibWin.Data;
+using ImageCompLibWin.Helpers;
+using QLogger.ConsoleHelpers;
 
 namespace ImageCompConsole.Subprograms
 {
@@ -52,13 +53,10 @@ namespace ImageCompConsole.Subprograms
                 foreach (var imageFile in imageFiles)
                 {
                     count++;
-                    if (ConsoleHelper.CanFreqPrint())
-                    {
-                        $"{count} file(s) found, last being {imageFile.Name}".InPlaceWriteToConsole();
-                    }
+                    $"{count} file(s) found, last being {imageFile.Name}".InplaceWrite();
                     lastFile = imageFile.Name;
                 }
-                $"{count} file(s) found, last being {lastFile}".InPlaceWriteToConsole();
+                $"{count} file(s) found, last being {lastFile}".InplaceWrite(true);
                 Console.WriteLine();
             }
             else

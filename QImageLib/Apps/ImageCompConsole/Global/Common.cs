@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QLogger.ConsoleHelpers;
+using System;
 
 namespace ImageCompConsole.Global
 {
@@ -10,9 +11,18 @@ namespace ImageCompConsole.Global
 
         public static void ResetInPlaceWriting()
         {
-            ConsoleHelper.ResetInPlaceWriting(LineLen);
+            InplaceWriter.Instance.RememberCursor();
         }
-
+        
+        public static void InplaceWrite(this string msg, bool mustWrite = false)
+        {
+            if (mustWrite || InplaceWriter.Instance.CanRefreshNow())
+            {
+                InplaceWriter.Instance.Write(msg);
+                InplaceWriter.Instance.UpdateLastRefreshTime();
+            }
+        }
+        
         public static void StartProgress()
         {
             _startTime = DateTime.UtcNow;
@@ -20,7 +30,7 @@ namespace ImageCompConsole.Global
 
         public static void PrintProgress(long tasks, long total, bool forcePrint = false)
         {
-            if (forcePrint || ConsoleHelper.CanFreqPrint())
+            if (forcePrint || InplaceWriter.Instance.CanRefreshNow())
             {
                 var curr = DateTime.UtcNow;
                 var elapsed = curr - _startTime;
@@ -30,8 +40,8 @@ namespace ImageCompConsole.Global
                 var remainstr = remain.ToString(@"d\.hh\:mm");
 
                 var perc = tasks * 100 / total;
-                $"{tasks}/{total} ({perc}%) completed. {elapsedstr} elapsed, est. {remainstr} remaining.".InPlaceWriteToConsole();
-                ConsoleHelper.UpdateLastPrintTime();
+                InplaceWriter.Instance.Write($"{tasks}/{total} ({perc}%) completed. {elapsedstr} elapsed, est. {remainstr} remaining.");
+                InplaceWriter.Instance.UpdateLastRefreshTime();
             }
         }
 

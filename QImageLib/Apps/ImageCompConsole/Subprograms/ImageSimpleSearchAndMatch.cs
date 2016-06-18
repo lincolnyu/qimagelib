@@ -2,6 +2,7 @@
 using ImageCompLibWin.Data;
 using ImageCompLibWin.Helpers;
 using ImageCompLibWin.SimpleMatch;
+using QLogger.ConsoleHelpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -105,12 +106,7 @@ namespace ImageCompConsole.Subprograms
                     lock (localImageList)
                     {
                         validCount++;
-                        if (ConsoleHelper.CanFreqPrint())
-                        {
-                            $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
-                            ConsoleHelper.UpdateLastPrintTime();
-                        }
-                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
+                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InplaceWrite();
                     }
                 }
                 else
@@ -118,12 +114,7 @@ namespace ImageCompConsole.Subprograms
                     lock (localInvalidFiles)
                     {
                         localInvalidFiles.Add(image.File);
-                        if (ConsoleHelper.CanFreqPrint())
-                        {
-                            $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
-                            ConsoleHelper.UpdateLastPrintTime();
-                        }
-                        $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
+                        $"{validCount}/{totalCount} file(s) collected. Last ignored: {image.File.Name}.".InplaceWrite();
                     }
                 }
             });
@@ -146,12 +137,7 @@ namespace ImageCompConsole.Subprograms
                     validCount++;
                     if (verbose)
                     {
-                        if (ConsoleHelper.CanFreqPrint())
-                        {
-                            $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
-                            ConsoleHelper.UpdateLastPrintTime();
-                        }
-                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InPlaceWriteToConsole();
+                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InplaceWrite();
                     }
                 }
                 else
@@ -159,12 +145,7 @@ namespace ImageCompConsole.Subprograms
                     invalidFiles.Add(image.File);
                     if (verbose)
                     {
-                        if (ConsoleHelper.CanFreqPrint())
-                        {
-                            $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
-                            ConsoleHelper.UpdateLastPrintTime();
-                        }
-                        $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InPlaceWriteToConsole();
+                        $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InplaceWrite();
                     }
                 }
             }

@@ -45,7 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Global\Common.cs" />
-    <Compile Include="Helpers\ConsoleHelper.cs" />
     <Compile Include="Subprograms\Subprogram.cs" />
     <Compile Include="Subprograms\ImageSimpleComp.cs" />
     <Compile Include="Subprograms\SearchImageFiles.cs" />
@@ -57,6 +56,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\qlogger\QLogger\QLogger.csproj">
+      <Project>{124e7226-5154-4a8c-b4a1-bdaeba8c1973}</Project>
+      <Name>QLogger</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\AppLibs\ImageCompLibWin\ImageCompLibWin.csproj">
       <Project>{2bb37eac-0de6-49fa-afbf-53add908f3c4}</Project>
       <Name>ImageCompLibWin</Name>
