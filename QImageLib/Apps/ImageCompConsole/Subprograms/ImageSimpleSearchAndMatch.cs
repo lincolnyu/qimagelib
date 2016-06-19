@@ -99,6 +99,7 @@ namespace ImageCompConsole.Subprograms
             var localInvalidFiles = new List<FileInfo>();
             Parallel.ForEach(imageEnum, (image) =>
             {
+                System.Diagnostics.Debug.Assert(image != null);
                 Interlocked.Increment(ref totalCount);
                 if (TestY(image))
                 {

@@ -54,6 +54,10 @@
     <Compile Include="Data\ImageProxy.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\qlogger\QLogger\QLogger.csproj">
+      <Project>{124E7226-5154-4A8C-B4A1-BDAEBA8C1973}</Project>
+      <Name>QLogger</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\QImageLib.Matcher\QImageLib.Matcher.csproj">
       <Project>{44FA23E3-FAE3-475C-AE92-4BC429309358}</Project>
       <Name>QImageLib.Matcher</Name>

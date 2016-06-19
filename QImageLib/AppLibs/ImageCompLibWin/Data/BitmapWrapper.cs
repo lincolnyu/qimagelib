@@ -17,6 +17,16 @@ namespace ImageCompLibWin.Data
             Content = bitmap;
         }
 
+        public BitmapWrapper(Bitmap bitmap, ImageCache cache, int millisecondsTimeout)
+        {
+            if (cache?.RequestTempImage(millisecondsTimeout) == false)
+            {
+                throw new TimeoutException("Temporary bitmap request timedout.");
+            }
+            CacheAwaitingTemp = cache;
+            Content = bitmap;
+        }
+
         ~BitmapWrapper()
         {
             Dispose(false);

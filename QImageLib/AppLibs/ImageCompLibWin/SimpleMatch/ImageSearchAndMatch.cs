@@ -5,6 +5,7 @@ using QImageLib.Statistics;
 using System.Threading.Tasks;
 using ImageCompLibWin.Helpers;
 using ImageCompLibWin.Data;
+using System;
 
 namespace ImageCompLibWin.SimpleMatch
 {
@@ -65,13 +66,7 @@ namespace ImageCompLibWin.SimpleMatch
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
                     if (histo != true && mse != null)
                     {
-                        using (var bmp1 = image1.Bitmap)
-                        using (var bmp2 = image2.Bitmap)
-                        {
-                            var y1 = bmp1.Content.GetYImage();
-                            var y2 = bmp2.Content.GetYImage();
-                            mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
-                        }
+                        mse = TryToFineCompare(image1, image2, mseThr);
                     }
                     if (mse != null)
                     {
@@ -125,13 +120,7 @@ namespace ImageCompLibWin.SimpleMatch
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
                     if (histo != true && mse != null)
                     {
-                        using (var bmp1 = image1.Bitmap)
-                        using (var bmp2 = image2.Bitmap)
-                        {
-                            var y1 = bmp1.Content.GetYImage();
-                            var y2 = bmp2.Content.GetYImage();
-                            mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
-                        }
+                        mse = TryToFineCompare(image1, image2, mseThr);
                     }
                     if (mse != null)
                     {
@@ -184,20 +173,7 @@ namespace ImageCompLibWin.SimpleMatch
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
                     if (histo != true && mse != null)
                     {
-                        using (var bmp1 = image1.TryGetBitmap())
-                        using (var bmp2 = image2.TryGetBitmap())
-                        {
-                            var y1 = bmp1.Content.GetYImage();
-                            var y2 = bmp2.Content.GetYImage();
-                            if (y1 != null && y2 != null)
-                            {
-                                mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
-                            }
-                            else
-                            {
-                                mse = null;
-                            }
-                        }
+                        mse = TryToFineCompare(image1, image2, mseThr);
                     }
                     if (mse != null)
                     {
@@ -216,6 +192,30 @@ namespace ImageCompLibWin.SimpleMatch
         public static IEnumerable<ImageProxy> OrderByAbsAspRatio(this IEnumerable<ImageProxy> yimageFileTuples)
         {
             return yimageFileTuples.OrderBy(x => x.AbsAspRatio);
+        }
+
+        private static double? TryToFineCompare(ImageProxy image1, ImageProxy image2, double mseThr, int maxAttempts = 5)
+        {
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                try
+                {
+                    using (var bmp1 = image1.TryGetTempBitmap(1, 30))
+                    {
+                        if (bmp1 == null) continue;
+                        var y1 = bmp1.Content.GetYImage();
+                        using (var bmp2 = image2.TryGetTempBitmap(1, 30))
+                        {
+                            var y2 = bmp2.Content.GetYImage();
+                            return image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
+            return null;
         }
     }
 }

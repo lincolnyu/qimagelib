@@ -14,7 +14,6 @@ namespace ImageCompLibWin.Data
 
         private AutoResetEvent _queueAddEvent = new AutoResetEvent(false);
 
-
         public ImageCache(int quota = DefaultQuota, int maxAllowedTempImages = DefaultMaxAllowedTempImages) : this(quota, quota / 2, maxAllowedTempImages)
         {
         }
@@ -37,7 +36,12 @@ namespace ImageCompLibWin.Data
         public LinkedList<ImageProxy> ImageQueue { get; } = new LinkedList<ImageProxy>();
 
         public Dictionary<ImageProxy, int> QueuedImages { get; } = new Dictionary<ImageProxy, int>();
-        
+
+        public bool RequestTempImage(int millisecondsTimeout)
+        {
+            return _tempImageSemaphore.WaitOne(millisecondsTimeout);
+        }
+
         public void RequestTempImage()
         {
             _tempImageSemaphore.WaitOne();

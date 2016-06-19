@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Drawing;
+using System.Threading;
 using ImageCompLibWin.Helpers;
 using QImageLib.Images;
 using QImageLib.Helpers;
@@ -184,19 +185,28 @@ namespace ImageCompLibWin.Data
         }
 
         /// <summary>
-        ///  Try to get a bitmap that's known to be valid for specified times of failure
+        ///  Try to get a temporary bitmap that's known to be valid for specifie
+        ///  number of times of failure. 
+        ///  If retain-bitmap is on or state is not ImageValid then it will do
+        ///  a normal Bitmap 
         /// </summary>
         /// <param name="maxAttempts">The maximum number of attempts</param>
         /// <returns>The bitmap</returns>
-        public BitmapWrapper TryGetBitmap(int maxAttempts = 3)
+        public BitmapWrapper TryGetTempBitmap(int maxAttempts, int millisecondsTimeout = Timeout.Infinite)
         {
-            System.Diagnostics.Debug.Assert(State == States.ImageValid);
-            BitmapWrapper bmp = null;
-            do
+            if (State == States.ImageValid && !RetainBitmap)
             {
-                bmp = Bitmap;
-            } while (bmp == null && maxAttempts-- > 0);
-            return bmp;
+                BitmapWrapper bmp = null;
+                do
+                {
+                    bmp = ImageValidGetBitmap(millisecondsTimeout);
+                } while (bmp == null && --maxAttempts > 0);
+                return bmp;
+            }
+            else
+            {
+                return Bitmap;
+            }
         }
 
         private YImage LoadYImage()
@@ -299,7 +309,7 @@ namespace ImageCompLibWin.Data
         /// <summary>
         ///  Get bitmap in ImageValid state
         /// </summary>
-        private BitmapWrapper ImageValidGetBitmap()
+        private BitmapWrapper ImageValidGetBitmap(int millisecondsTimeout = Timeout.Infinite)
         {
             try
             {
@@ -309,11 +319,11 @@ namespace ImageCompLibWin.Data
                 }
                 if (RetainBitmap)
                 {
-                    return LoadBitmapAndItsInfo();
+                    return LoadBitmapAndItsInfo(millisecondsTimeout);
                 }
                 else
                 {
-                    return GetBitmap(false);
+                    return GetBitmap(false, millisecondsTimeout);
                 }
             }
             catch (Exception)
@@ -485,13 +495,13 @@ namespace ImageCompLibWin.Data
             return _width * _height;
         }
 
-        private BitmapWrapper GetBitmap(bool retain)
+        private BitmapWrapper GetBitmap(bool retain, int millisecondsTimeout = Timeout.Infinite)
         {
             Bitmap bmp = null; 
             try
             {
                 bmp = (Bitmap)Image.FromFile(File.FullName);
-                return new BitmapWrapper(bmp, retain ? null : Cache);
+                return new BitmapWrapper(bmp, retain ? null : Cache, millisecondsTimeout);
             }
             catch (Exception) 
             {
@@ -510,9 +520,13 @@ namespace ImageCompLibWin.Data
             Cache?.ReleaseTempImage();
         }
         
-        private BitmapWrapper GetBitmapAndLoadItsInfo(bool retain)
+        private BitmapWrapper GetBitmapAndLoadItsInfo(bool retain, int millisecondsTimeout = Timeout.Infinite)
         {
-            var bmp = GetBitmap(retain);
+            var bmp = GetBitmap(retain, millisecondsTimeout);
+            if (bmp == null)
+            {
+                return null;
+            }
             _width = bmp.Content.GetBitmapWidth();
             _height = bmp.Content.GetBitmapHeight();
             var pfmt = bmp.Content.GetPixelFormat();
@@ -543,11 +557,14 @@ namespace ImageCompLibWin.Data
         ///  Post: bmp loaded, size requested in cache
         /// </summary>
         /// <returns></returns>
-        private BitmapWrapper LoadBitmapAndItsInfo()
+        private BitmapWrapper LoadBitmapAndItsInfo(int millisecondsTimeout = Timeout.Infinite)
         {
-            var bmp = GetBitmapAndLoadItsInfo(true);
-            var bmpSize = GetBitmapSize();
-            Cache?.Request(this, bmpSize); // what if this throws an exception
+            var bmp = GetBitmapAndLoadItsInfo(true, millisecondsTimeout);
+            if (bmp != null)
+            {
+                var bmpSize = GetBitmapSize();
+                Cache?.Request(this, bmpSize); // what if this throws an exception
+            }
             _bitmap = bmp;
             return bmp;
         }
