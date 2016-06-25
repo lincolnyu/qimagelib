@@ -25,7 +25,7 @@ namespace ImageCompLibWin.SimpleMatch
             Image2 = image2;
         }
 
-        public SimpleMatchTask(ImageProxy image1, ImageProxy image2) : this (image1, image2, image1.ImageManager)
+        public SimpleMatchTask(ImageProxy image1, ImageProxy image2, double mseThr) : this (image1, image2, image1.ImageManager)
         {
         }
 
@@ -45,7 +45,7 @@ namespace ImageCompLibWin.SimpleMatch
 
         public ImageProxy Image2 { get; }
 
-        public double MseThr => ImageManager?.MseThr?? ImageComp.DefaultMseThr;
+        public double MseThr { get; }
 
         public SimpleImageMatch Result { get; private set; }
 
@@ -57,11 +57,7 @@ namespace ImageCompLibWin.SimpleMatch
 
         protected override void Perform()
         {
-            var mse = Image1.Thumb.GetSimpleMinMse(Image2.Thumb, MseThr);
-            if (mse != null)
-            {
-                mse = Image1.YImage.GetSimpleMinMse(Image2.YImage, MseThr);
-            }
+            var mse = Image1.YImage.GetSimpleMinMse(Image2.YImage, MseThr);
             if (mse != null)
             {
                 Result = new SimpleImageMatch(Image1, Image2, mse.Value);

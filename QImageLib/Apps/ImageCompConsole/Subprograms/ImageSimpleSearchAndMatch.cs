@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Diagnostics.Debug;
 
 namespace ImageCompConsole.Subprograms
 {
@@ -112,7 +113,7 @@ namespace ImageCompConsole.Subprograms
                 Interlocked.Increment(ref totalCount);
                 if (TestImage(image))
                 {
-                    System.Diagnostics.Debug.Assert(image != null);
+                    Assert(image != null);
                     localImageList.Add(image);
                     lock (localImageList)
                     {
@@ -176,7 +177,7 @@ namespace ImageCompConsole.Subprograms
             Console.WriteLine("Sorting files ...");
             imageList.Sort((a, b) =>
             {
-                System.Diagnostics.Debug.Assert(a != null && b != null);
+                Assert(a != null && b != null);
                 return a.AbsAspRatio.CompareTo(b.AbsAspRatio);
             });
             Console.WriteLine("Files sorted...");

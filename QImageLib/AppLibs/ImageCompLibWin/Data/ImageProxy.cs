@@ -9,6 +9,9 @@ namespace ImageCompLibWin.Data
 {
     public class ImageProxy : IResource
     {
+        private bool _isEngaged;
+        private YImage _yimage;
+
         public ImageProxy(FileInfo file, ImageManager imageManager = null)
         {
             File = file;
@@ -23,7 +26,17 @@ namespace ImageCompLibWin.Data
         public FileInfo File { get; }
 
         public YImage Thumb { get; private set; }
-        public YImage YImage { get; private set; }
+        public YImage YImage
+        {
+            get
+            {
+                if (_yimage == null)
+                {
+                    LoadYImage(MaxYConvAttempts);
+                }
+                return _yimage;
+            }
+        }
         public int Width { get; private set; }
         public int Height { get; private set; }
         public int Bpp { get; private set; }
@@ -50,18 +63,15 @@ namespace ImageCompLibWin.Data
         {
             get
             {
-                return YImage != null;
+                return _isEngaged;
             }
 
             set
             {
+                _isEngaged = value;
                 if (!value)
                 {
-                    Release();
-                }
-                else if (YImage == null)
-                {
-                    LoadYImage(MaxYConvAttempts);
+                    _yimage = null;
                 }
             }
         }
@@ -109,26 +119,23 @@ namespace ImageCompLibWin.Data
 
         private void LoadYImage(int numAttempts)
         {
-            var bmp = TryGetBitmap(ref numAttempts);
-            if (bmp != null)
+            using (var bmp = TryGetBitmap(ref numAttempts))
             {
-                for (; YImage == null && numAttempts > 0; numAttempts--)
+                if (bmp != null)
                 {
-                    try
+                    for (; _yimage == null && numAttempts > 0; numAttempts--)
                     {
-                        YImage = bmp.GetYImage();
-                        break;
-                    }
-                    catch (Exception)
-                    {
+                        try
+                        {
+                            _yimage = bmp.GetYImage();
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                        }
                     }
                 }
             }
-        }
-
-        private void Release()
-        {
-            YImage = null;
         }
     }
 }

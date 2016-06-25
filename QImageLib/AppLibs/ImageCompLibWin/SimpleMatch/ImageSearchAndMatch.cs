@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using QImageLib.Matcher;
-using QImageLib.Statistics;
 using System.Threading.Tasks;
-using ImageCompLibWin.Helpers;
 using ImageCompLibWin.Data;
-using System;
 
 namespace ImageCompLibWin.SimpleMatch
 {
@@ -125,13 +122,17 @@ namespace ImageCompLibWin.SimpleMatch
                         return;
                     }
 
-                    var task = new SimpleMatchTask(image1, image2);
-                    task.Run();
-
-                    if (task.Result != null)
+                    var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
+                    if (mse != null)
                     {
-                        result.Add(task.Result);
+                        var task = new SimpleMatchTask(image1, image2, mseThr);
+                        task.Run();
+                        if (task.Result != null)
+                        {
+                            result.Add(task.Result);
+                        }
                     }
+
                     progress?.Invoke();
                 });
             });

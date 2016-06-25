@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using static System.Diagnostics.Debug;
 
 namespace ImageCompLibWin.Data
 {
@@ -131,6 +132,7 @@ namespace ImageCompLibWin.Data
                         if (r.IsEngaged)
                         {
                             Used += r.Size;
+                            Assert(!CachedResources.Contains(r));
                             CachedResources.Add(r);
                         }
                     }
