@@ -21,7 +21,20 @@ namespace ImageCompConsole.Subprograms
             Parallel
         }
 
+        public const int PreprocessParallelism = 16;
+
+        public ImageSimpleSearchAndMatch(ImageManager imageManager)
+        {
+            ImageManager = imageManager;
+        }
+
+        public ImageSimpleSearchAndMatch() : this (ImageManager.Instance)
+        {
+        }
+
         public static ImageSimpleSearchAndMatch Instance { get; } = new ImageSimpleSearchAndMatch();
+
+        public ImageManager ImageManager { get; }
 
         public override string Subcommand { get; } = "sm";
 
@@ -42,19 +55,20 @@ namespace ImageCompConsole.Subprograms
             var listfile = args.GetSwitchValue("-l");
             var hasty = args.Contains("-h");
             var mode = hasty ? Modes.SequentialHasty : parallel ? Modes.Parallel : Modes.Sequential;
+            var imageManager = ImageManager.Instance;
             if (listfile != null)
             {
-                SearchAndMatchInList(listfile, report, verbose, mode);
+                SearchAndMatchInList(imageManager, listfile, report, verbose, mode);
             }
             else
             {
-                SearchAndMatchInDir(dir, report, verbose, mode);
+                SearchAndMatchInDir(imageManager, dir, report, verbose, mode);
             }
         }
 
-        private static void SearchAndMatchInList(string listfile, string report, bool verbose, Modes mode)
+        private static void SearchAndMatchInList(ImageManager manager, string listfile, string report, bool verbose, Modes mode)
         {
-            var imageEnum = GetImagesFromListFile(listfile).GetImages(ImageManager.Instance);
+            var imageEnum = GetImagesFromListFile(listfile).GetImages(manager);
             SearchAndMatch(imageEnum, report, verbose, mode);
         }
 
@@ -71,24 +85,16 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        private static void SearchAndMatchInDir(string sdir, string report, bool verbose = false, Modes
-             mode =  Modes.Sequential)
+        private static void SearchAndMatchInDir(ImageManager manager, string sdir, string report, bool verbose = false, Modes mode =  Modes.Sequential)
         {
             var dir = new DirectoryInfo(sdir);
-            var imageEnum = dir.GetImages(ImageManager.Instance);
+            var imageEnum = dir.GetImages(manager);
             SearchAndMatch(imageEnum, report, verbose, mode);
         }
 
-        private static bool TestY(ImageProxy image)
+        private static bool TestImage(ImageProxy image)
         {
-            if (image.HasFastHisto)
-            {
-                return image.IsValidY;
-            }
-            else
-            {
-                return image.YImage != null;
-            }
+            return image.TryLoadImageInfo();
         }
 
         private static void PreprocessVerboseParallel(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles)
@@ -97,12 +103,16 @@ namespace ImageCompConsole.Subprograms
             var totalCount = 0;
             var localImageList = new List<ImageProxy>();
             var localInvalidFiles = new List<FileInfo>();
-            Parallel.ForEach(imageEnum, (image) =>
+            var options = new ParallelOptions()
             {
-                System.Diagnostics.Debug.Assert(image != null);
+                MaxDegreeOfParallelism = PreprocessParallelism
+            };
+            Parallel.ForEach(imageEnum, options, (image) =>
+            {
                 Interlocked.Increment(ref totalCount);
-                if (TestY(image))
+                if (TestImage(image))
                 {
+                    System.Diagnostics.Debug.Assert(image != null);
                     localImageList.Add(image);
                     lock (localImageList)
                     {
@@ -132,7 +142,7 @@ namespace ImageCompConsole.Subprograms
             foreach (var image in imageEnum)
             {
                 totalCount++;
-                if (TestY(image))
+                if (TestImage(image))
                 {
                     imageList.Add(image);
                     validCount++;
@@ -164,7 +174,11 @@ namespace ImageCompConsole.Subprograms
                 }
             }
             Console.WriteLine("Sorting files ...");
-            imageList.Sort((a, b) => a.AbsAspRatio.CompareTo(b.AbsAspRatio));
+            imageList.Sort((a, b) =>
+            {
+                System.Diagnostics.Debug.Assert(a != null && b != null);
+                return a.AbsAspRatio.CompareTo(b.AbsAspRatio);
+            });
             Console.WriteLine("Files sorted...");
         }
 
@@ -172,9 +186,13 @@ namespace ImageCompConsole.Subprograms
         {
             var localImageList = new List<ImageProxy>();
             var localInvalidFiles = new List<FileInfo>();
-            Parallel.ForEach(imageEnum, (image) =>
+            var options = new ParallelOptions()
             {
-                if (TestY(image))
+                MaxDegreeOfParallelism = PreprocessParallelism
+            };
+            Parallel.ForEach(imageEnum, options, (image) =>
+            {
+                if (TestImage(image))
                 {
                     lock (localImageList)
                     {

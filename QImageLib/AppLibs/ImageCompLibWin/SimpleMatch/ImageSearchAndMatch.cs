@@ -12,7 +12,6 @@ namespace ImageCompLibWin.SimpleMatch
     public static class ImageSearchAndMatch
     {
         public const double DefaultAspRatioThr = 1.05;
-        public const int DefaultHistoThr = 6;
 
         public delegate void ProgressReport(int i, int j);
 
@@ -31,19 +30,13 @@ namespace ImageCompLibWin.SimpleMatch
         }
 
         public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
-            double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr,
-            double histoThr = DefaultHistoThr)
+            double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
             bool? histo = null;
             for (var i = 0; i < images.Count - 1; i++)
             {
                 var image1 = images[i];
-                var histo1 = image1.FastHisto;
                 var r1 = image1.AbsAspRatio;
-                if (histo == null)
-                {
-                    histo = image1.HasFastHisto;
-                }
                 for (var j = i + 1; j < images.Count; j++)
                 {
                     var image2 = images[j];
@@ -52,15 +45,6 @@ namespace ImageCompLibWin.SimpleMatch
                     {
                         progress?.Invoke(i, j);
                         break;
-                    }
-                    if (histo == true)
-                    {
-                        var histo2 = image2.FastHisto;
-                        if (histo1.Diff(histo2) > histoThr)
-                        {
-                            progress?.Invoke(i, j);
-                            continue;
-                        }
                     }
 
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
@@ -75,27 +59,20 @@ namespace ImageCompLibWin.SimpleMatch
 
                     progress?.Invoke(i, j);
                 }
-                image1.Release();
+                image1.IsEngaged = false;
             }
         }
 
         public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImagesHasty(this IEnumerable<ImageProxy> images, ProgressReport progress = null,
-            double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr,
-            double histoThr = DefaultHistoThr)
+            double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
-            bool? histo = null;
             var hastyList = images.Select(x => new HastyImage(x)).ToList();
             for (var i = 0; i < hastyList.Count - 1; i++)
             {
                 var hasty1 = hastyList[i];
                 if (hasty1.Excluded) continue;
                 var image1 = hasty1.WrappedImage;
-                var histo1 = image1.FastHisto;
                 var r1 = image1.AbsAspRatio;
-                if (histo == null)
-                {
-                    histo = image1.HasFastHisto;
-                }
                 for (var j = i + 1; j < hastyList.Count; j++)
                 {
                     var hasty2 = hastyList[j];
@@ -107,18 +84,9 @@ namespace ImageCompLibWin.SimpleMatch
                         progress?.Invoke(i, j);
                         break;
                     }
-                    if (histo == true)
-                    {
-                        var histo2 = image2.FastHisto;
-                        if (histo1.Diff(histo2) > histoThr)
-                        {
-                            progress?.Invoke(i, j);
-                            continue;
-                        }
-                    }
-
+                    
                     var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
-                    if (histo != true && mse != null)
+                    if (mse != null)
                     {
                         mse = TryToFineCompare(image1, image2, mseThr);
                     }
@@ -127,30 +95,26 @@ namespace ImageCompLibWin.SimpleMatch
                         hasty1.Excluded = true;
                         hasty2.Excluded = true;
                         yield return new SimpleImageMatch(image1, image2, mse.Value);
-                        image2.Release();
+                        image2.IsEngaged = false;
                     }
                     progress?.Invoke(i, j);
                 }
-                image1.Release();
+                image1.IsEngaged = false;
             }
         }
 
         public static IList<SimpleImageMatch> SimpleSearchAndMatchImagesParallel(this IList<ImageProxy> images, ParallelProgressReport progress = null,
-          double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr,
-          double histoThr = DefaultHistoThr)
+          double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
             var result = new List<SimpleImageMatch>();
-            bool? histo = null;
+            var manager = images.FirstOrDefault()?.ImageManager;
+            if (manager == null) return result;
+            manager.TaskManager.Start();
             Parallel.For(0, images.Count - 1, (int i) =>
             {
                 var image1 = images[i];
-                var histo1 = image1.FastHisto;
                 var r1 = image1.AbsAspRatio;
 
-                if (histo == null)
-                {
-                    histo = image1.HasFastHisto;
-                }
                 Parallel.For(i + 1, images.Count, (int j) =>
                 {
                     var image2 = images[j];
@@ -160,32 +124,18 @@ namespace ImageCompLibWin.SimpleMatch
                         progress?.Invoke();
                         return;
                     }
-                    if (histo == true)
-                    {
-                        var histo2 = image2.FastHisto;
-                        if (histo1.Diff(histo2) > histoThr)
-                        {
-                            progress?.Invoke();
-                            return;
-                        }
-                    }
-                   
-                    var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
-                    if (histo != true && mse != null)
-                    {
-                        mse = TryToFineCompare(image1, image2, mseThr);
-                    }
-                    if (mse != null)
-                    {
-                        lock (result)
-                        {
-                            result.Add(new SimpleImageMatch(image1, image2, mse.Value));
-                        }
-                    }
 
+                    var task = new SimpleMatchTask(image1, image2);
+                    task.Run();
+
+                    if (task.Result != null)
+                    {
+                        result.Add(task.Result);
+                    }
                     progress?.Invoke();
                 });
             });
+            manager.TaskManager.Stop();
             return result;
         }
 
@@ -194,28 +144,13 @@ namespace ImageCompLibWin.SimpleMatch
             return yimageFileTuples.OrderBy(x => x.AbsAspRatio);
         }
 
-        private static double? TryToFineCompare(ImageProxy image1, ImageProxy image2, double mseThr, int maxAttempts = 5)
+        private static double? TryToFineCompare(ImageProxy image1, ImageProxy image2, double mseThr, int maxAttempts = 16)
         {
-            for (var attempt = 0; attempt < maxAttempts; attempt++)
-            {
-                try
-                {
-                    using (var bmp1 = image1.TryGetTempBitmap(1, 30))
-                    {
-                        if (bmp1 == null) continue;
-                        var y1 = bmp1.Content.GetYImage();
-                        using (var bmp2 = image2.TryGetTempBitmap(1, 30))
-                        {
-                            var y2 = bmp2.Content.GetYImage();
-                            return image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                }
-            }
-            return null;
+            image1.IsEngaged = true;
+            if (!image1.IsEngaged) return null;
+            image2.IsEngaged = true;
+            if (!image2.IsEngaged) return null;
+            return image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
         }
     }
 }

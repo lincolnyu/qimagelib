@@ -37,7 +37,7 @@ namespace ImageCompConsole.Subprograms
             var imageEnum = dir.GetImageFiles();
             if (check)
             {
-                imageEnum = imageEnum.Where(x => new ImageProxy(x).IsValidY);
+                imageEnum = imageEnum.Where(x => new ImageProxy(x).TryLoadImageInfo());
             }
             var imageFiles = imageEnum.ToList();
             if (verbose)

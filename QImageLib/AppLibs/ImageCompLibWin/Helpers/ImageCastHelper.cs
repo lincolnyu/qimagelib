@@ -48,9 +48,17 @@ namespace ImageCompLibWin.Helpers
 
             if (bmpHeight > crunch || bmpWidth > crunch)
             {
-                var cr = bmpHeight > bmpWidth ? (double)bmpHeight / crunch : (double)bmpWidth / crunch;
-                var w = (int)Math.Round(bmpWidth / cr);
-                var h = (int)Math.Round(bmpHeight / cr);
+                int w, h;
+                if (bmpHeight > bmpWidth)
+                {
+                    h = crunch;
+                    w = Math.Max(h * bmpWidth / bmpHeight, 1);
+                }
+                else
+                {
+                    w = crunch;
+                    h = Math.Max(w * bmpHeight / bmpWidth, 1);
+                }
                 var yimage = new YImage(h, w);
 
                 var iistart = 0;
