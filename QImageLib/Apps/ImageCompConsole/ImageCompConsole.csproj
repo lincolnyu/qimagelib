@@ -76,7 +76,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy $(TargetDir)*.exe $(ProjectDir)..\bin\
-copy $(TargetDir)*.dll $(ProjectDir)..\bin\</PostBuildEvent>
+copy $(TargetDir)*.dll $(ProjectDir)..\bin\
+copy $(TargetDir)*.exe $(QSBinDir)
+copy $(TargetDir)*.exe $(QSBinDir)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
