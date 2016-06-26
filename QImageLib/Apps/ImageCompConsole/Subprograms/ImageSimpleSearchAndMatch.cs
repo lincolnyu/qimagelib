@@ -7,8 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using static ImageCompLibWin.SimpleMatch.MatchResults;
 using static System.Diagnostics.Debug;
 
 namespace ImageCompConsole.Subprograms
@@ -230,18 +230,34 @@ namespace ImageCompConsole.Subprograms
             invalidFiles = localInvalidFiles;
         }
 
-        private static void ShowMatches(string reportFile, IEnumerable<SimpleImageMatch> matches, ICollection<FileInfo> invalidFiles, bool verbose)
+        private static void ShowMatches(string reportFile, IList<MatchResult> matchRes, ICollection<FileInfo> invalidFiles, bool verbose)
         {
             if (reportFile != null)
             {
                 if (verbose) Console.WriteLine("Exporting matched images...");
                 using (var reportWriter = new StreamWriter(reportFile))
                 {
-                    foreach (var match in matches)
+                    var i = 0;
+                    for (; i < matchRes.Count; i++)
                     {
+                        var res = matchRes[i];
+                        var match = res as ImagesMatch;
+                        if (match == null) break;
                         var mrep = $"{match.Image1.Path}|{match.Image2.Path}:{match.Mse}";
                         reportWriter.WriteLine(mrep);
                     }
+
+                    if (i < matchRes.Count)
+                    {
+                        reportWriter.WriteLine(">>>>>>>>>> Comp Failures >>>>>>>>>>");
+                        for (; i < matchRes.Count; i++)
+                        {
+                            var res = (MatchError)matchRes[i];
+                            var mrep = $"{res.Image1.Path}|{res.Image2.Path}:{res.GetErrorDescription()}";
+                            reportWriter.WriteLine(mrep);
+                        }
+                    }
+                    
                     if (invalidFiles.Count > 0)
                     {
                         reportWriter.WriteLine(">>>>>>>>>> Ignored Files >>>>>>>>>>");
@@ -256,7 +272,7 @@ namespace ImageCompConsole.Subprograms
             else
             {
                 if (verbose) Console.WriteLine("Printing matched images...");
-                foreach (var match in matches)
+                foreach (var match in matchRes.OfType<ImagesMatch>())
                 {
                     var mrep = $"{match.Image1.Path}|{match.Image2.Path}:{match.Mse}";
                     Console.WriteLine(mrep);
@@ -279,9 +295,9 @@ namespace ImageCompConsole.Subprograms
             throw new ArgumentException("Unexpected image search and match mode");
         }
 
-        private static IEnumerable<SimpleImageMatch> MatchImages(IList<ImageProxy> imageList, Modes mode, bool verbose)
+        private static IList<MatchResult> MatchImages(IList<ImageProxy> imageList, Modes mode, bool verbose)
         {
-            IEnumerable<SimpleImageMatch> matches;
+            List<MatchResult> matches;
             if (verbose)
             {
                 var modeName = GetModeName(mode);
@@ -302,21 +318,21 @@ namespace ImageCompConsole.Subprograms
                                 tasks++;
                                 Common.PrintProgress(tasks, total);
                             }
-                        }).OrderBy(x => x.Mse).ToList();
+                        }).ToList();
                         break;
                     case Modes.Sequential:
                         matches = imageList.SimpleSearchAndMatchImages((i, j) =>
                         {
                             tasks++;
                             Common.PrintProgress(tasks, total);
-                        }).OrderBy(x => x.Mse).ToList();
+                        }).ToList();
                         break;
                     case Modes.SequentialHasty:
                         matches = imageList.SimpleSearchAndMatchImagesHasty((i, j) =>
                         {
                             tasks++;
                             Common.PrintProgress(tasks, total);
-                        }).OrderBy(x => x.Mse).ToList();
+                        }).ToList();
                         break;
                     default:
                         throw new ArgumentException("Unexpected image search and match mode");
@@ -332,18 +348,19 @@ namespace ImageCompConsole.Subprograms
                 switch (mode)
                 {
                     case Modes.Parallel:
-                        matches = imageList.SimpleSearchAndMatchImagesParallel().OrderBy(x => x.Mse);
+                        matches = imageList.SimpleSearchAndMatchImagesParallel().ToList();
                         break;
                     case Modes.Sequential:
-                        matches = imageList.SimpleSearchAndMatchImages().OrderBy(x => x.Mse);
+                        matches = imageList.SimpleSearchAndMatchImages().ToList();
                         break;
                     case Modes.SequentialHasty:
-                        matches = imageList.SimpleSearchAndMatchImagesHasty().OrderBy(x => x.Mse);
+                        matches = imageList.SimpleSearchAndMatchImagesHasty().ToList();
                         break;
                     default:
                         throw new ArgumentException("Unexpected image search and match mode");
                 }
             }
+            matches.Sort(CompareMatchResults);
             return matches;
         }
 

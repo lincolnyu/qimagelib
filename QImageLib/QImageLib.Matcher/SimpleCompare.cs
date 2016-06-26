@@ -5,25 +5,27 @@ namespace QImageLib.Matcher
 {
     public static class SimpleCompare
     {
+        public const double DefaultSquashMappingTolerance = 1.2;
+
         /// <summary>
         ///  Returns the min MSE comparing two images with all possible simple transformations
         /// </summary>
         /// <param name="image1">The first image</param>
         /// <param name="image2">The second image</param>
         /// <returns>The minimum MSE</returns>
-        public static double? GetSimpleMinMse(this IYImage image1, IYImage image2, double quitMse = double.MaxValue)
+        public static double? GetSimpleMinMse(this IYImage image1, IYImage image2, double quitMse = double.MaxValue, double squashMapTole = DefaultSquashMappingTolerance)
         {
+            // (W1/H1)/(W2/H2)
             var r1 = (double)image1.NumCols * image2.NumRows / (image1.NumRows * image2.NumCols);
-            // W1/H1 < W2/H2
+            // (W1/H1)/(H2/W2)
             var r2 = (double)image1.NumCols * image2.NumCols / (image1.NumRows * image2.NumRows);
 
             if (r1 < 1) r1 = 1 / r1;
             if (r2 < 1) r2 = 1 / r2;
 
-            const double t = 0.2;
             var image2x = new YImageAdapter(image2);
             double? minMse = null;
-            if (Math.Abs(r1 - 1) < t)
+            if (r1 < squashMapTole)
             {
                 // row to row
                 var swap = image1.NumRows > image2x.NumRows;
@@ -39,7 +41,7 @@ namespace QImageLib.Matcher
                 var mset = GetMse(image1, image2x, swap, quitMse);
                 mset.UpdateMinMse(ref minMse);
             }
-            if (Math.Abs(r2 - 1) < t)
+            if (r2 < squashMapTole)
             {
                 // row to col
                 var swap = image1.NumRows > image2x.NumCols;

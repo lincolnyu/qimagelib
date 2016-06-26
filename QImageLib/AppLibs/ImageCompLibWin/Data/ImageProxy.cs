@@ -111,8 +111,9 @@ namespace ImageCompLibWin.Data
                 {
                     return (Bitmap)Image.FromFile(File.FullName);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    if (numAttempts <= 1) throw e;
                 }
             }
             return null;
@@ -131,8 +132,9 @@ namespace ImageCompLibWin.Data
                             _yimage = bmp.GetYImage();
                             break;
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
+                            if (numAttempts <= 1) throw e;
                         }
                     }
                 }

@@ -3,6 +3,9 @@ using System.Linq;
 using QImageLib.Matcher;
 using System.Threading.Tasks;
 using ImageCompLibWin.Data;
+using static ImageCompLibWin.SimpleMatch.MatchResults;
+using QImageLib.Images;
+using System;
 
 namespace ImageCompLibWin.SimpleMatch
 {
@@ -26,7 +29,27 @@ namespace ImageCompLibWin.SimpleMatch
             public bool Excluded { get; set; }
         }
 
-        public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
+        public static MatchError CheckYImages(ImageProxy image1, ImageProxy image2, out YImage y1, out YImage y2)
+        {
+            try
+            {
+                y1 = image1.YImage;
+                y2 = image2.YImage;
+                if (y1 == null || y2 == null)
+                {
+                    return new MatchError(image1, image2, MatchError.Errors.YImageError, MatchError.YImageNull);
+                }
+            }
+            catch (Exception e)
+            {
+                y1 = null;
+                y2 = null;
+                return new MatchError(image1, image2, MatchError.Errors.YImageError, e);
+            }
+            return null;
+        }
+
+        public static IEnumerable<MatchResult> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
             double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
             bool? histo = null;
@@ -44,14 +67,21 @@ namespace ImageCompLibWin.SimpleMatch
                         break;
                     }
 
-                    var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+                    YImage y1, y2;
+                    var error = CheckYImages(image1, image2, out y1, out y2);
+                    if (error != null)
+                    {
+                        yield return error;
+                    }
+
+                    var mse = y1.GetSimpleMinMse(y2, mseThr);
                     if (histo != true && mse != null)
                     {
                         mse = TryToFineCompare(image1, image2, mseThr);
                     }
                     if (mse != null)
                     {
-                        yield return new SimpleImageMatch(image1, image2, mse.Value);
+                        yield return new ImagesMatch(image1, image2, mse.Value);
                     }
 
                     progress?.Invoke(i, j);
@@ -60,7 +90,7 @@ namespace ImageCompLibWin.SimpleMatch
             }
         }
 
-        public static IEnumerable<SimpleImageMatch> SimpleSearchAndMatchImagesHasty(this IEnumerable<ImageProxy> images, ProgressReport progress = null,
+        public static IEnumerable<MatchResult> SimpleSearchAndMatchImagesHasty(this IEnumerable<ImageProxy> images, ProgressReport progress = null,
             double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
             var hastyList = images.Select(x => new HastyImage(x)).ToList();
@@ -81,8 +111,10 @@ namespace ImageCompLibWin.SimpleMatch
                         progress?.Invoke(i, j);
                         break;
                     }
-                    
-                    var mse = image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
+
+                    var y1 = image1.YImage;
+                    var y2 = image2.YImage;
+                    var mse = y1.GetSimpleMinMse(y2, mseThr);
                     if (mse != null)
                     {
                         mse = TryToFineCompare(image1, image2, mseThr);
@@ -91,7 +123,7 @@ namespace ImageCompLibWin.SimpleMatch
                     {
                         hasty1.Excluded = true;
                         hasty2.Excluded = true;
-                        yield return new SimpleImageMatch(image1, image2, mse.Value);
+                        yield return new ImagesMatch(image1, image2, mse.Value);
                         image2.IsEngaged = false;
                     }
                     progress?.Invoke(i, j);
@@ -100,10 +132,10 @@ namespace ImageCompLibWin.SimpleMatch
             }
         }
 
-        public static IList<SimpleImageMatch> SimpleSearchAndMatchImagesParallel(this IList<ImageProxy> images, ParallelProgressReport progress = null,
+        public static IList<MatchResult> SimpleSearchAndMatchImagesParallel(this IList<ImageProxy> images, ParallelProgressReport progress = null,
           double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
-            var result = new List<SimpleImageMatch>();
+            var result = new List<MatchResult>();
             var manager = images.FirstOrDefault()?.ImageManager;
             if (manager == null) return result;
             manager.TaskManager.Start();

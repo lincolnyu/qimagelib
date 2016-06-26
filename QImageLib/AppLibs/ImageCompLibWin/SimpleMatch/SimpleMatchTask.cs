@@ -2,6 +2,8 @@
 using QImageLib.Matcher;
 using ImageCompLibWin.Data;
 using ImageCompLibWin.Tasking;
+using static ImageCompLibWin.SimpleMatch.MatchResults;
+using QImageLib.Images;
 
 namespace ImageCompLibWin.SimpleMatch
 {
@@ -15,7 +17,7 @@ namespace ImageCompLibWin.SimpleMatch
 
         #region Constructors
 
-        public SimpleMatchTask(ImageProxy image1, ImageProxy image2, ImageManager manager) : base(manager?.TaskManager)
+        public SimpleMatchTask(ImageProxy image1, ImageProxy image2, double mseThr, ImageManager manager) : base(manager?.TaskManager)
         {
             _requiredResources = new ImageProxy[] {
                 image1,
@@ -24,9 +26,10 @@ namespace ImageCompLibWin.SimpleMatch
             ImageManager = manager;
             Image1 = image1;
             Image2 = image2;
+            MseThr = mseThr;
         }
 
-        public SimpleMatchTask(ImageProxy image1, ImageProxy image2, double mseThr) : this (image1, image2, image1.ImageManager)
+        public SimpleMatchTask(ImageProxy image1, ImageProxy image2, double mseThr) : this (image1, image2, mseThr, image1.ImageManager)
         {
         }
 
@@ -48,7 +51,7 @@ namespace ImageCompLibWin.SimpleMatch
 
         public double MseThr { get; }
 
-        public SimpleImageMatch Result { get; private set; }
+        public MatchResult Result { get; private set; }
 
         #endregion
 
@@ -58,17 +61,18 @@ namespace ImageCompLibWin.SimpleMatch
 
         protected override void Perform()
         {
-            var y1 = Image1.YImage;
-            var y2 = Image2.YImage;
-            if (y1 == null || y2 == null)
+            YImage y1, y2;
+            var error = ImageSearchAndMatch.CheckYImages(Image1, Image2, out y1, out y2);
+            if (error != null)
             {
-                // TODO WARNING...
+                Result = error;
                 return;
             }
+
             var mse = y1.GetSimpleMinMse(y2, MseThr);
             if (mse != null)
             {
-                Result = new SimpleImageMatch(Image1, Image2, mse.Value);
+                Result = new ImagesMatch(Image1, Image2, mse.Value);
             }
         }
 
