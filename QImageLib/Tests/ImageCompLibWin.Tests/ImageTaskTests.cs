@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ImageCompLibWin.Tasking;
 using static ImageCompLibWin.Tests.Helpers.TestConsoleHelper;
-using ImageCompLibWin.Data;
 
 namespace ImageCompLibWin.Tests
 {
@@ -32,7 +32,7 @@ namespace ImageCompLibWin.Tests
             }
         }
 
-        public class MockCompTask : Data.Task
+        public class MockCompTask : Tasking.Task
         {
             private ICollection<IResource> _requiredREsources;
 

@@ -41,7 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\IResource.cs" />
+    <Compile Include="Tasking\IResource.cs" />
     <Compile Include="Helpers\BitmapHelper.cs" />
     <Compile Include="Helpers\ImageCastHelper.cs" />
     <Compile Include="Helpers\ImageEnumeration.cs" />
@@ -51,10 +51,10 @@
     <Compile Include="SimpleMatch\ImageSearchAndMatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Data\ImageProxy.cs" />
-    <Compile Include="Data\Task.cs" />
-    <Compile Include="Data\TaskManager.cs" />
+    <Compile Include="Tasking\Task.cs" />
+    <Compile Include="Tasking\TaskManager.cs" />
     <Compile Include="SimpleMatch\SimpleMatchTask.cs" />
-    <Compile Include="Threading\SimpleLock.cs" />
+    <Compile Include="SimpleMatch\SimpleMatchTaskInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\qlogger\QLogger\QLogger.csproj">

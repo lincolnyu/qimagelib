@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading;
 
-namespace ImageCompLibWin.Data
+namespace ImageCompLibWin.Tasking
 {
     public abstract class Task
     {

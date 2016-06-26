@@ -22,6 +22,12 @@ namespace ImageCompConsole.Global
                 InplaceWriter.Instance.UpdateLastRefreshTime();
             }
         }
+
+        public static void InplaceConcludeWriteLine(this string msg)
+        {
+            InplaceWriter.Instance.WriteLine(msg);
+            InplaceWriter.Instance.RememberCursor();
+        }
         
         public static void StartProgress()
         {

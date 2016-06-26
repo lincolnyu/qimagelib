@@ -1,4 +1,4 @@
-﻿namespace ImageCompLibWin.Data
+﻿namespace ImageCompLibWin.Tasking
 {
     public interface IResource
     {

@@ -19,12 +19,13 @@ namespace ImageCompLibWin.Helpers
         }
 
         /// <summary>
-        ///  
+        ///  Converts the bitmap to get the Y image component
         /// </summary>
-        /// <param name="bmp"></param>
-        /// <param name="crunch"></param>
+        /// <param name="bmp">The bitmap to convert</param>
+        /// <param name="crunch">Size restriction if any</param>
         /// <returns></returns>
         /// <remarks>
+        ///  Thread unsafe on the bitmap
         ///  References: 
         ///   http://stackoverflow.com/questions/11662354/c-sharp-faster-way-to-compare-pixels-between-two-images-and-only-write-out-the-d
         ///   http://davidthomasbernal.com/blog/2008/03/13/c-image-processing-performance-unsafe-vs-safe-code-part-i/
@@ -32,9 +33,9 @@ namespace ImageCompLibWin.Helpers
         /// </remarks>
         public static YImage GetYImage(this Bitmap bmp, int crunch = int.MaxValue)
         {
-            var bmpWidth = bmp.GetBitmapWidth();
-            var bmpHeight = bmp.GetBitmapHeight();
-            var pfmt = bmp.GetPixelFormat();
+            var bmpWidth = bmp.Width;
+            var bmpHeight = bmp.Height;
+            var pfmt = bmp.PixelFormat;
             int stride;
             byte[] buf;
             bmp.GetBuffer(bmpWidth, bmpHeight, pfmt, out buf, out stride); 

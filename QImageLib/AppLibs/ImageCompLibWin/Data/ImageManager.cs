@@ -1,4 +1,5 @@
-﻿using ImageCompLibWin.SimpleMatch;
+﻿using ImageCompLibWin.Tasking;
+using ImageCompLibWin.SimpleMatch;
 
 namespace ImageCompLibWin.Data
 {

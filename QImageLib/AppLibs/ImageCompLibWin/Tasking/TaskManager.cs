@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using static System.Diagnostics.Debug;
 
-namespace ImageCompLibWin.Data
+namespace ImageCompLibWin.Tasking
 {
     public class TaskManager
     {
@@ -128,11 +128,12 @@ namespace ImageCompLibWin.Data
                 {
                     foreach (var r in reqrsrcs)
                     {
+                        Assert(!r.IsEngaged);
                         r.IsEngaged = true;
                         if (r.IsEngaged)
                         {
                             Used += r.Size;
-                            Assert(!CachedResources.Contains(r));
+                            //Assert(!CachedResources.Contains(r));
                             CachedResources.Add(r);
                         }
                     }

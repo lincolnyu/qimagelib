@@ -101,16 +101,20 @@ namespace ImageCompConsole.Subprograms
         private static void PreprocessVerboseParallel(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles)
         {
             var validCount = 0;
-            var totalCount = 0;
             var localImageList = new List<ImageProxy>();
             var localInvalidFiles = new List<FileInfo>();
             var options = new ParallelOptions()
             {
                 MaxDegreeOfParallelism = PreprocessParallelism
             };
-            Parallel.ForEach(imageEnum, options, (image) =>
+
+            "Collecting files ... ".InplaceWrite();
+            var tempList = imageEnum.ToList();
+            var totalCount = tempList.Count;
+            $"{totalCount} file(s) collected.".InplaceConcludeWriteLine();
+
+            Parallel.ForEach(tempList, options, (image) =>
             {
-                Interlocked.Increment(ref totalCount);
                 if (TestImage(image))
                 {
                     Assert(image != null);
@@ -118,7 +122,7 @@ namespace ImageCompConsole.Subprograms
                     lock (localImageList)
                     {
                         validCount++;
-                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InplaceWrite();
+                        $"{validCount}/{totalCount} file(s) analysed. Recent: {image.File.Name}.".InplaceWrite();
                     }
                 }
                 else
@@ -126,7 +130,7 @@ namespace ImageCompConsole.Subprograms
                     lock (localInvalidFiles)
                     {
                         localInvalidFiles.Add(image.File);
-                        $"{validCount}/{totalCount} file(s) collected. Last ignored: {image.File.Name}.".InplaceWrite();
+                        $"{validCount}/{totalCount} file(s) analysed. Recent: {image.File.Name}.".InplaceWrite();
                     }
                 }
             });
@@ -137,29 +141,40 @@ namespace ImageCompConsole.Subprograms
         private static void PreprocessSequential(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles, bool verbose)
         {
             var validCount = 0;
-            var totalCount = 0;
-            imageList = new List<ImageProxy>();
-            invalidFiles = new List<FileInfo>();
-            foreach (var image in imageEnum)
+            var removeList = new List<int>();
+
+            "Collecting files ... ".InplaceWrite();
+            imageList = imageEnum.ToList();
+            var totalCount = imageList.Count;
+            $"{totalCount} file(s) collected.".InplaceConcludeWriteLine();
+
+            for (var i = 0; i < imageList.Count; i++)
             {
-                totalCount++;
+                var image = imageList[i];
                 if (TestImage(image))
                 {
                     imageList.Add(image);
                     validCount++;
                     if (verbose)
                     {
-                        $"{validCount}/{totalCount} file(s) collected. Last collected: {image.File.Name}.".InplaceWrite();
+                        $"{validCount}/{totalCount} file(s) collected. Recent: {image.File.Name}.".InplaceWrite();
                     }
                 }
                 else
                 {
-                    invalidFiles.Add(image.File);
+                    removeList.Add(i);
                     if (verbose)
                     {
                         $"{validCount}/{totalCount} file(s) collected. Last ignored:    {image.File.Name}.".InplaceWrite();
                     }
                 }
+            }
+
+            var temp = imageList;
+            invalidFiles = removeList.Select(i => temp[i].File).ToList();
+            foreach (var i in ((IEnumerable<int>)removeList).Reverse())
+            {
+                imageList.RemoveAt(i);
             }
         }
 
@@ -273,7 +288,7 @@ namespace ImageCompConsole.Subprograms
                 Common.ResetInPlaceWriting();
 
                 var total = ((long)imageList.Count - 1) * imageList.Count / 2;
-                int tasks = 0;
+                long tasks = 0;
                 Common.StartProgress();
                 switch (mode)
                 {

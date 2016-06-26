@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using QImageLib.Matcher;
 using ImageCompLibWin.Data;
+using ImageCompLibWin.Tasking;
 
 namespace ImageCompLibWin.SimpleMatch
 {

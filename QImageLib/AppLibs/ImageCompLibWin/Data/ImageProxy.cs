@@ -1,9 +1,10 @@
 ﻿using System.IO;
-using QImageLib.Images;
 using System.Drawing;
 using System;
-using ImageCompLibWin.Helpers;
 using QImageLib.Helpers;
+using QImageLib.Images;
+using ImageCompLibWin.Helpers;
+using ImageCompLibWin.Tasking;
 
 namespace ImageCompLibWin.Data
 {
@@ -89,7 +90,7 @@ namespace ImageCompLibWin.Data
                     Width = bmp.Width;
                     Height = bmp.Height;
                     Size = Width * Height;
-                    var pfmt = bmp.GetPixelFormat();
+                    var pfmt = bmp.PixelFormat;
                     Bpp = Image.GetPixelFormatSize(pfmt);
                     AbsAspRatio = ImagePropertiesHelper.GetAbsAspectRatio(Width, Height);
                     Thumb = bmp.GetYImage(ThumbSize);

@@ -107,35 +107,33 @@ namespace ImageCompLibWin.SimpleMatch
             var manager = images.FirstOrDefault()?.ImageManager;
             if (manager == null) return result;
             manager.TaskManager.Start();
-            Parallel.For(0, images.Count - 1, (int i) =>
+
+            var tiSeq = SimpleMatchTaskInfo.GenerateTaskSequence(images.Count);
+            Parallel.ForEach(tiSeq, ti =>
             {
-                var image1 = images[i];
+                var image1 = images[ti.Index1];
+                var image2 = images[ti.Index2];
                 var r1 = image1.AbsAspRatio;
-
-                Parallel.For(i + 1, images.Count, (int j) =>
+                var r2 = image2.AbsAspRatio;
+                if (r2 > r1 * aspThr)
                 {
-                    var image2 = images[j];
-                    var r2 = image2.AbsAspRatio;
-                    if (r2 > r1 * aspThr)
-                    {
-                        progress?.Invoke();
-                        return;
-                    }
-
-                    var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
-                    if (mse != null)
-                    {
-                        var task = new SimpleMatchTask(image1, image2, mseThr);
-                        task.Run();
-                        if (task.Result != null)
-                        {
-                            result.Add(task.Result);
-                        }
-                    }
-
                     progress?.Invoke();
-                });
+                    return;
+                }
+                var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
+                if (mse != null)
+                {
+                    var task = new SimpleMatchTask(image1, image2, mseThr);
+                    task.Run();
+                    if (task.Result != null)
+                    {
+                        result.Add(task.Result);
+                    }
+                }
+
+                progress?.Invoke();
             });
+
             manager.TaskManager.Stop();
             return result;
         }

@@ -39,11 +39,11 @@ namespace ImageCompConsole.Subprograms
             {
                 imageEnum = imageEnum.Where(x => new ImageProxy(x).TryLoadImageInfo());
             }
-            var imageFiles = imageEnum.ToList();
             if (verbose)
             {
                 Console.WriteLine("Collecting image files...");
             }
+            var imageFiles = imageEnum.ToList();
             var exportReport = !string.IsNullOrWhiteSpace(report);
             if (verbose && exportReport)
             {
