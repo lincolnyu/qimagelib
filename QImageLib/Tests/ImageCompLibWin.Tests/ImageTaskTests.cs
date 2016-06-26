@@ -70,7 +70,7 @@ namespace ImageCompLibWin.Tests
         const int MaxImageEdgeSize = 6000;
         const int MinImageEdgeSize = 64;
         public const int StringentQuota = 1024 * 1024 * 36 * 2;
-        public const int GenerousQuota = 1024 * 1024 * 1024;
+        public const int GenerousQuota = 1024 * 1024 * 256;
 
         public static Random Rand = new Random(123);
 

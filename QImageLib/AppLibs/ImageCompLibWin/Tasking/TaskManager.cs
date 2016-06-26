@@ -8,7 +8,7 @@ namespace ImageCompLibWin.Tasking
 {
     public class TaskManager
     {
-        public const int DefaultQuota = 1024 * 1024 * 1024;
+        public const int DefaultQuota = 1024 * 1024 * 256;
 
         private bool _running;
 

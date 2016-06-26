@@ -58,7 +58,14 @@ namespace ImageCompLibWin.SimpleMatch
 
         protected override void Perform()
         {
-            var mse = Image1.YImage.GetSimpleMinMse(Image2.YImage, MseThr);
+            var y1 = Image1.YImage;
+            var y2 = Image2.YImage;
+            if (y1 == null || y2 == null)
+            {
+                // TODO WARNING...
+                return;
+            }
+            var mse = y1.GetSimpleMinMse(y2, MseThr);
             if (mse != null)
             {
                 Result = new SimpleImageMatch(Image1, Image2, mse.Value);

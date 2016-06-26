@@ -122,7 +122,8 @@ namespace ImageCompConsole.Subprograms
                     lock (localImageList)
                     {
                         validCount++;
-                        $"{validCount}/{totalCount} file(s) analysed. Recent: {image.File.Name}.".InplaceWrite();
+                        var invalidCount = localInvalidFiles.Count;
+                        $"{validCount} valid and {invalidCount} invalid file(s) analysed out of {totalCount}. Recent: {image.File.Name}.".InplaceWrite();
                     }
                 }
                 else
@@ -130,7 +131,8 @@ namespace ImageCompConsole.Subprograms
                     lock (localInvalidFiles)
                     {
                         localInvalidFiles.Add(image.File);
-                        $"{validCount}/{totalCount} file(s) analysed. Recent: {image.File.Name}.".InplaceWrite();
+                        var invalidCount = localInvalidFiles.Count;
+                        $"{validCount} valid and {invalidCount} invalid file(s) analysed out of {totalCount}. Recent: {image.File.Name}.".InplaceWrite();
                     }
                 }
             });
