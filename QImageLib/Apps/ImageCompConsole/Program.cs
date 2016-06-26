@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using ImageCompConsole.Subprograms;
+using QLogger.AppHelpers;
 
 namespace ImageCompConsole
 {
@@ -34,15 +35,17 @@ namespace ImageCompConsole
             }
             catch (Exception)
             {
-                Console.WriteLine($"Invalid command arguments.");
+                Console.WriteLine($"Invalid command arguments. See the usage below.");
+                Console.WriteLine();
                 PrintUsage();
             }
         }
 
         private static void PrintUsage()
         {
-            var appname = Assembly.GetExecutingAssembly().GetName().Name;
-            Console.WriteLine("ImageComp Tool for Windows (ver 1.0) -- based on QImageLib");
+            var appname = AppInfo.GetAppExecutableName();
+            var ver = AppInfo.GetAppVersion();
+            Console.WriteLine($"ImageComp Tool for Windows [Version {ver.Major}.{ver.Minor}] -- based on QImageLib");
 
             Console.WriteLine();
             foreach (var subprog in Subprograms)
