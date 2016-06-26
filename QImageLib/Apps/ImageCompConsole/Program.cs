@@ -32,11 +32,13 @@ namespace ImageCompConsole
                     }
                 }      
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.WriteLine($"Invalid command arguments. See the usage below.");
-                Console.WriteLine();
-                PrintUsage();
+                Console.WriteLine("Something went wrong:");
+                Console.WriteLine($"{e.GetType().Name}: {e.Message}");
+                Console.WriteLine("Try the following command for usage or email linc.yu@outlook.com for support.");
+                var appname = AppInfo.GetAppExecutableName();
+                Console.WriteLine($"  {appname} --help");
             }
         }
 
@@ -54,7 +56,7 @@ namespace ImageCompConsole
             }
 
             Console.WriteLine("  To show this usage help: ");
-            Console.WriteLine("    " + appname + " --help");
+            Console.WriteLine($"    {appname } --help");
         }
     }
 }
