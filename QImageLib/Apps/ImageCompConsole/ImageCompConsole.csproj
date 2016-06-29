@@ -60,6 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Global\Common.cs" />
+    <Compile Include="Helpers\NumberConverters.cs" />
     <Compile Include="Subprograms\Subprogram.cs" />
     <Compile Include="Subprograms\ImageSimpleComp.cs" />
     <Compile Include="Subprograms\SearchImageFiles.cs" />

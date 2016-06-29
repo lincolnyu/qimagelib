@@ -1,7 +1,9 @@
 ﻿using ImageCompConsole.Global;
+using ImageCompConsole.Helpers;
 using ImageCompLibWin.Data;
 using ImageCompLibWin.Helpers;
 using ImageCompLibWin.SimpleMatch;
+using ImageCompLibWin.Tasking;
 using QLogger.ConsoleHelpers;
 using System;
 using System.Collections.Generic;
@@ -24,18 +26,9 @@ namespace ImageCompConsole.Subprograms
 
         public const int DefaultProprocessParallelism = 16;
 
-        public ImageSimpleSearchAndMatch(ImageManager imageManager)
-        {
-            ImageManager = imageManager;
-        }
-
-        public ImageSimpleSearchAndMatch() : this (ImageManager.Instance)
-        {
-        }
-
         public static ImageSimpleSearchAndMatch Instance { get; } = new ImageSimpleSearchAndMatch();
 
-        public ImageManager ImageManager { get; }
+        public ImageManager ImageManager { get; private set; }
 
         public int PreprocessParallelism { get; private set; } = DefaultProprocessParallelism;
 
@@ -45,8 +38,8 @@ namespace ImageCompConsole.Subprograms
         {
             var indentStr = new string(' ', indent);
             var contentIndentStr = new string(' ', indent + contentIndent);
-            Console.WriteLine(indentStr + "To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h to use sequential hasty mode, -pp to specify the number of parallel tasks for image file loading and preprocessing (default 16))");
-            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>] [-pp <num concurrent tasks>]");
+            Console.WriteLine(indentStr + $"To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h to use sequential hasty mode, -s to specify the maximum total size in pixels of images processed in memory (default {TaskManager.DefaultQuota.ConvertToM()}M pixels), -pp to specify the number of parallel tasks for image file loading and preprocessing (default {DefaultProprocessParallelism}))");
+            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>] [-s <total pixel number>] [-pp <num concurrent tasks>]");
         }
 
         public override void Run(string[] args)
@@ -57,27 +50,31 @@ namespace ImageCompConsole.Subprograms
             var parallel = args.Contains("-p");
             var listfile = args.GetSwitchValue("-l");
             var hasty = args.Contains("-h");
+            var quotastr = args.GetSwitchValue("-s");
+            int quota;
+            if (!int.TryParse(quotastr, out quota))
+            {
+                quota = TaskManager.DefaultQuota;
+            }
+            var taskManager = new TaskManager(quota);
+            ImageManager = new ImageManager(taskManager);
             var concstr = args.GetSwitchValue("-pp");
             int concurrency;
-            if (int.TryParse(concstr, out concurrency))
-            {
-                PreprocessParallelism = concurrency;
-            }
+            PreprocessParallelism = int.TryParse(concstr, out concurrency) ? concurrency : DefaultProprocessParallelism;
             var mode = hasty ? Modes.SequentialHasty : parallel ? Modes.Parallel : Modes.Sequential;
-            var imageManager = ImageManager.Instance;
             if (listfile != null)
             {
-                SearchAndMatchInList(imageManager, listfile, report, verbose, mode);
+                SearchAndMatchInList(listfile, report, verbose, mode);
             }
             else
             {
-                SearchAndMatchInDir(imageManager, dir, report, verbose, mode);
+                SearchAndMatchInDir(dir, report, verbose, mode);
             }
         }
 
-        private void SearchAndMatchInList(ImageManager manager, string listfile, string report, bool verbose, Modes mode)
+        private void SearchAndMatchInList(string listfile, string report, bool verbose, Modes mode)
         {
-            var imageEnum = GetImagesFromListFile(listfile).GetImages(manager);
+            var imageEnum = GetImagesFromListFile(listfile).GetImages(ImageManager);
             SearchAndMatch(imageEnum, report, verbose, mode);
         }
 
@@ -94,10 +91,10 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        private void SearchAndMatchInDir(ImageManager manager, string sdir, string report, bool verbose = false, Modes mode =  Modes.Sequential)
+        private void SearchAndMatchInDir(string sdir, string report, bool verbose = false, Modes mode =  Modes.Sequential)
         {
             var dir = new DirectoryInfo(sdir);
-            var imageEnum = dir.GetImages(manager);
+            var imageEnum = dir.GetImages(ImageManager);
             SearchAndMatch(imageEnum, report, verbose, mode);
         }
 
