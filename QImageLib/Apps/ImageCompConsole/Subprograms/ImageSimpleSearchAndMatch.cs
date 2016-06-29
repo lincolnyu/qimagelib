@@ -22,7 +22,7 @@ namespace ImageCompConsole.Subprograms
             Parallel
         }
 
-        public const int PreprocessParallelism = 16;
+        public const int DefaultProprocessParallelism = 16;
 
         public ImageSimpleSearchAndMatch(ImageManager imageManager)
         {
@@ -37,14 +37,16 @@ namespace ImageCompConsole.Subprograms
 
         public ImageManager ImageManager { get; }
 
+        public int PreprocessParallelism { get; private set; } = DefaultProprocessParallelism;
+
         public override string Subcommand { get; } = "sm";
 
         public override void PrintUsage(string appname, int indent, int contentIndent)
         {
             var indentStr = new string(' ', indent);
             var contentIndentStr = new string(' ', indent + contentIndent);
-            Console.WriteLine(indentStr + "To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h sequential hasty mode)");
-            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>]");
+            Console.WriteLine(indentStr + "To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h to use sequential hasty mode, -pp to specify the number of parallel tasks for image file loading and preprocessing (default 16))");
+            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>] [-pp <num concurrent tasks>]");
         }
 
         public override void Run(string[] args)
@@ -55,6 +57,12 @@ namespace ImageCompConsole.Subprograms
             var parallel = args.Contains("-p");
             var listfile = args.GetSwitchValue("-l");
             var hasty = args.Contains("-h");
+            var concstr = args.GetSwitchValue("-pp");
+            int concurrency;
+            if (int.TryParse(concstr, out concurrency))
+            {
+                PreprocessParallelism = concurrency;
+            }
             var mode = hasty ? Modes.SequentialHasty : parallel ? Modes.Parallel : Modes.Sequential;
             var imageManager = ImageManager.Instance;
             if (listfile != null)
@@ -67,7 +75,7 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        private static void SearchAndMatchInList(ImageManager manager, string listfile, string report, bool verbose, Modes mode)
+        private void SearchAndMatchInList(ImageManager manager, string listfile, string report, bool verbose, Modes mode)
         {
             var imageEnum = GetImagesFromListFile(listfile).GetImages(manager);
             SearchAndMatch(imageEnum, report, verbose, mode);
@@ -86,7 +94,7 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        private static void SearchAndMatchInDir(ImageManager manager, string sdir, string report, bool verbose = false, Modes mode =  Modes.Sequential)
+        private void SearchAndMatchInDir(ImageManager manager, string sdir, string report, bool verbose = false, Modes mode =  Modes.Sequential)
         {
             var dir = new DirectoryInfo(sdir);
             var imageEnum = dir.GetImages(manager);
@@ -98,7 +106,7 @@ namespace ImageCompConsole.Subprograms
             return image.TryLoadImageInfo();
         }
 
-        private static void PreprocessVerboseParallel(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles)
+        private void PreprocessVerboseParallel(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles)
         {
             var validCount = 0;
             var localImageList = new List<ImageProxy>();
@@ -200,7 +208,7 @@ namespace ImageCompConsole.Subprograms
             Console.WriteLine("Files sorted...");
         }
 
-        private static void PreprocessSilentParallel(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles)
+        private void PreprocessSilentParallel(IEnumerable<ImageProxy> imageEnum, out List<ImageProxy> imageList, out List<FileInfo> invalidFiles)
         {
             var localImageList = new List<ImageProxy>();
             var localInvalidFiles = new List<FileInfo>();
@@ -364,7 +372,7 @@ namespace ImageCompConsole.Subprograms
             return matches;
         }
 
-        private static void SearchAndMatch(IEnumerable<ImageProxy> imageEnum, string reportFile, bool verbose = false, Modes mode = Modes.Sequential)
+        private void SearchAndMatch(IEnumerable<ImageProxy> imageEnum, string reportFile, bool verbose = false, Modes mode = Modes.Sequential)
         {
             try
             {
