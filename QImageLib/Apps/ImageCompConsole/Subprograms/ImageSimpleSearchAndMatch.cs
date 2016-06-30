@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using static ImageCompLibWin.Helpers.ImageEnumeration;
 using static ImageCompLibWin.SimpleMatch.MatchResults;
 using static System.Diagnostics.Debug;
 
@@ -17,12 +18,21 @@ namespace ImageCompConsole.Subprograms
 {
     class ImageSimpleSearchAndMatch : Subprogram
     {
-        public enum Modes
+        public enum MatchingModes
         {
             Sequential,
             SequentialHasty,
             Parallel
         }
+        
+        public enum PreprocessingModes
+        {
+            Sequential,
+            Parallel
+        }
+
+        public MatchingModes MatchingMode { get; set; }
+        public PreprocessingModes PreprocessingMode { get; set; }
 
         public const int DefaultProprocessParallelism = 16;
 
@@ -61,21 +71,41 @@ namespace ImageCompConsole.Subprograms
             var concstr = args.GetSwitchValue("-pp");
             int concurrency;
             PreprocessParallelism = int.TryParse(concstr, out concurrency) ? concurrency : DefaultProprocessParallelism;
-            var mode = hasty ? Modes.SequentialHasty : parallel ? Modes.Parallel : Modes.Sequential;
+
+            MatchingMode = hasty ? MatchingModes.SequentialHasty : parallel ? MatchingModes.Parallel : MatchingModes.Sequential;
+            PreprocessingMode = parallel || PreprocessParallelism != 1 ? PreprocessingModes.Parallel : PreprocessingModes.Sequential;
+
             if (listfile != null)
             {
-                SearchAndMatchInList(listfile, report, verbose, mode);
+                SearchAndMatchInList(listfile, report, verbose);
             }
             else
             {
-                SearchAndMatchInDir(dir, report, verbose, mode);
+                SearchAndMatchInDir(dir, report, verbose);
             }
         }
 
-        private void SearchAndMatchInList(string listfile, string report, bool verbose, Modes mode)
+        private void ShowImageEnumErrors(ImageEnumErrors errors, string reportFileToAppend, bool verbose)
         {
-            var imageEnum = GetImagesFromListFile(listfile).GetImages(ImageManager);
-            SearchAndMatch(imageEnum, report, verbose, mode);
+            if (verbose)
+            {
+                Console.WriteLine($"{errors.Errors.Count} directories or files failed to access and ignored");
+            }
+            if (errors.Errors.Count > 0)
+            {
+                using (var sw = new StreamWriter(reportFileToAppend, true))
+                {
+                    errors.WriteReport(sw);
+                }
+            }
+        }
+
+        private void SearchAndMatchInList(string listfile, string report, bool verbose)
+        {
+            var errors = new ImageEnumErrors();
+            var imageEnum = GetImagesFromListFile(listfile).GetImages(errors, ImageManager);
+            SearchAndMatch(imageEnum, report, verbose);
+            ShowImageEnumErrors(errors, report, verbose);
         }
 
         private static IEnumerable<string> GetImagesFromListFile(string listfile)
@@ -91,11 +121,13 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        private void SearchAndMatchInDir(string sdir, string report, bool verbose = false, Modes mode =  Modes.Sequential)
+        private void SearchAndMatchInDir(string sdir, string report, bool verbose = false)
         {
             var dir = new DirectoryInfo(sdir);
-            var imageEnum = dir.GetImages(ImageManager);
-            SearchAndMatch(imageEnum, report, verbose, mode);
+            var errors = new ImageEnumErrors();
+            var imageEnum = dir.GetImages(errors, ImageManager);
+            SearchAndMatch(imageEnum, report, verbose);
+            ShowImageEnumErrors(errors, report, verbose);
         }
 
         private static bool TestImage(ImageProxy image)
@@ -254,7 +286,7 @@ namespace ImageCompConsole.Subprograms
 
                     if (i < matchRes.Count)
                     {
-                        reportWriter.WriteLine(">>>>>>>>>> Comp Failures >>>>>>>>>>");
+                        reportWriter.WriteLine(">>>>>>>>>> Failed Comparisions >>>>>>>>>>");
                         for (; i < matchRes.Count; i++)
                         {
                             var res = (MatchError)matchRes[i];
@@ -286,26 +318,26 @@ namespace ImageCompConsole.Subprograms
             }
         }
 
-        private static string GetModeName(Modes mode)
+        private string GetModeName()
         {
-            switch (mode)
+            switch (MatchingMode)
             {
-                case Modes.Parallel:
+                case MatchingModes.Parallel:
                     return "Parallel";
-                case Modes.Sequential:
+                case MatchingModes.Sequential:
                     return "Sequential";
-                case Modes.SequentialHasty:
+                case MatchingModes.SequentialHasty:
                     return "Sequential Hasty";
             }
             throw new ArgumentException("Unexpected image search and match mode");
         }
 
-        private static IList<MatchResult> MatchImages(IList<ImageProxy> imageList, Modes mode, bool verbose)
+        private IList<MatchResult> MatchImages(IList<ImageProxy> imageList, bool verbose)
         {
             List<MatchResult> matches;
             if (verbose)
             {
-                var modeName = GetModeName(mode);
+                var modeName = GetModeName();
                 Console.WriteLine("Matching image files in " + modeName + " mode ...");
 
                 Common.ResetInPlaceWriting();
@@ -313,9 +345,9 @@ namespace ImageCompConsole.Subprograms
                 var total = ((long)imageList.Count - 1) * imageList.Count / 2;
                 long tasks = 0;
                 Common.StartProgress();
-                switch (mode)
+                switch (MatchingMode)
                 {
-                    case Modes.Parallel:
+                    case MatchingModes.Parallel:
                         matches = imageList.SimpleSearchAndMatchImagesParallel(() =>
                         {
                             lock (imageList)
@@ -325,14 +357,14 @@ namespace ImageCompConsole.Subprograms
                             }
                         }).ToList();
                         break;
-                    case Modes.Sequential:
+                    case MatchingModes.Sequential:
                         matches = imageList.SimpleSearchAndMatchImages((i, j) =>
                         {
                             tasks++;
                             Common.PrintProgress(tasks, total);
                         }).ToList();
                         break;
-                    case Modes.SequentialHasty:
+                    case MatchingModes.SequentialHasty:
                         matches = imageList.SimpleSearchAndMatchImagesHasty((i, j) =>
                         {
                             tasks++;
@@ -350,15 +382,15 @@ namespace ImageCompConsole.Subprograms
             }
             else
             {
-                switch (mode)
+                switch (MatchingMode)
                 {
-                    case Modes.Parallel:
+                    case MatchingModes.Parallel:
                         matches = imageList.SimpleSearchAndMatchImagesParallel().ToList();
                         break;
-                    case Modes.Sequential:
+                    case MatchingModes.Sequential:
                         matches = imageList.SimpleSearchAndMatchImages().ToList();
                         break;
-                    case Modes.SequentialHasty:
+                    case MatchingModes.SequentialHasty:
                         matches = imageList.SimpleSearchAndMatchImagesHasty().ToList();
                         break;
                     default:
@@ -369,7 +401,7 @@ namespace ImageCompConsole.Subprograms
             return matches;
         }
 
-        private void SearchAndMatch(IEnumerable<ImageProxy> imageEnum, string reportFile, bool verbose = false, Modes mode = Modes.Sequential)
+        private void SearchAndMatch(IEnumerable<ImageProxy> imageEnum, string reportFile, bool verbose = false)
         {
             try
             {
@@ -383,7 +415,7 @@ namespace ImageCompConsole.Subprograms
                 if (verbose)
                 {
                     Common.ResetInPlaceWriting();
-                    if (mode == Modes.Parallel)
+                    if (PreprocessingMode == PreprocessingModes.Parallel)
                     {
                         PreprocessVerboseParallel(imageEnum, out imageList, out invalidFiles);
                     }
@@ -395,7 +427,7 @@ namespace ImageCompConsole.Subprograms
                 }
                 else
                 {
-                    if (mode == Modes.Parallel)
+                    if (PreprocessingMode == PreprocessingModes.Parallel)
                     {
                         PreprocessSilentParallel(imageEnum, out imageList, out invalidFiles);
                     }
@@ -404,7 +436,7 @@ namespace ImageCompConsole.Subprograms
                         PreprocessSequential(imageEnum, out imageList, out invalidFiles, false);
                     }
                 }
-                var matches = MatchImages(imageList, mode, verbose);
+                var matches = MatchImages(imageList, verbose);
                 ShowMatches(reportFile, matches, invalidFiles, verbose);
             }
             catch (Exception e)

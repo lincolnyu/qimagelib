@@ -5,6 +5,8 @@ using ImageCompConsole.Global;
 using ImageCompLibWin.Data;
 using ImageCompLibWin.Helpers;
 using QLogger.ConsoleHelpers;
+using static ImageCompLibWin.Helpers.ImageEnumeration;
+using ImageCompConsole.Helpers;
 
 namespace ImageCompConsole.Subprograms
 {
@@ -34,7 +36,8 @@ namespace ImageCompConsole.Subprograms
         public static void Search(string sdir, string report, bool check, bool verbose)
         {
             var dir = new DirectoryInfo(sdir);
-            var imageEnum = dir.GetImageFiles();
+            var errors = new ImageEnumErrors();
+            var imageEnum = dir.GetImageFiles(errors);
             if (check)
             {
                 imageEnum = imageEnum.Where(x => new ImageProxy(x).TryLoadImageInfo());
@@ -68,7 +71,7 @@ namespace ImageCompConsole.Subprograms
             }
             if (verbose)
             {
-                Console.WriteLine("Image collection completed.");
+                Console.WriteLine($"Image collection completed. {errors.Errors.Count} directories or files failed to access and ignored.");
             }
 
             if (exportReport)
@@ -79,6 +82,7 @@ namespace ImageCompConsole.Subprograms
                     {
                         sw.WriteLine(imageFile.FullName);
                     }
+                    errors.WriteReport(sw);
                 }
                 if (verbose)
                 {
