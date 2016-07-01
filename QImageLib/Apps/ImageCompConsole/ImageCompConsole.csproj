@@ -24,10 +24,14 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>http://qimagelib.codeplex.com/releases/clickonce/</InstallUrl>
+    <SupportUrl>http://qimagelib.codeplex.com/documentation</SupportUrl>
+    <ProductName>ImageComp</ProductName>
+    <PublisherName>quanbenSoft</PublisherName>
+    <SuiteName>QImageLib</SuiteName>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
     <ApplicationRevision>1</ApplicationRevision>
-    <ApplicationVersion>1.2.0.%2a</ApplicationVersion>
+    <ApplicationVersion>1.2.2.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -61,7 +65,7 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>4A2BCB8FF597B48570754A193CF1A4F1BB221D78</ManifestCertificateThumbprint>
@@ -95,6 +99,12 @@
     <None Include="App.config" />
     <None Include="ImageCompConsole_TemporaryKey.pfx" />
     <None Include="Properties\app.manifest" />
+    <Content Include="run.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="setup.bat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\qlogger\QLogger\QLogger.csproj">

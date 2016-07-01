@@ -16,12 +16,12 @@ namespace ImageCompConsole.Subprograms
 
         public override string Subcommand { get; } = "s";
 
-        public override void PrintUsage(string appname, int indent, int contentIndent)
+        public override void PrintUsage(string leadingStr, int indent, int contentIndent)
         {
             var indentStr = new string(' ', indent);
             var contentIndentStr = new string(' ', indent + contentIndent);
             Console.WriteLine(indentStr + "To find out all images files in the directory and its subdirectory (-c to check image for processability)");
-            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " <base directory> [-c] [-o <report file>]");
+            Console.WriteLine(contentIndentStr + leadingStr + " <base directory> [-c] [-o <report file>]");
         }
 
         public override void Run(string[] args)

@@ -44,12 +44,12 @@ namespace ImageCompConsole.Subprograms
 
         public override string Subcommand { get; } = "sm";
 
-        public override void PrintUsage(string appname, int indent, int contentIndent)
+        public override void PrintUsage(string leadingStr, int indent, int contentIndent)
         {
             var indentStr = new string(' ', indent);
             var contentIndentStr = new string(' ', indent + contentIndent);
             Console.WriteLine(indentStr + $"To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h to use sequential hasty mode, -s to specify the maximum total size in pixels of images processed in memory (default {TaskManager.DefaultQuota.ConvertToM()}M pixels), -pp to specify the number of parallel tasks for image file loading and preprocessing (default {DefaultProprocessParallelism}))");
-            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>] [-s <total pixel number>] [-pp <num concurrent tasks>]");
+            Console.WriteLine(contentIndentStr + leadingStr + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>] [-s <total pixel number>] [-pp <num concurrent tasks>]");
         }
 
         public override void Run(string[] args)

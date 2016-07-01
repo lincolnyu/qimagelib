@@ -10,12 +10,12 @@ namespace ImageCompConsole.Subprograms
 
         public override string Subcommand { get; } = "c";
 
-        public override void PrintUsage(string appname, int indent, int contentIndent)
+        public override void PrintUsage(string leadingStr, int indent, int contentIndent)
         {
             var indentStr = new string(' ', indent);
             var contentIndentStr = new string(' ', indent + contentIndent);
             Console.WriteLine(indentStr + "To compare two images: ");
-            Console.WriteLine(contentIndentStr + LeadingCommandString(appname) + " <path to first image> <path to second image>");
+            Console.WriteLine(contentIndentStr + leadingStr + " <path to first image> <path to second image>");
         }
 
         public override void Run(string[] args)
