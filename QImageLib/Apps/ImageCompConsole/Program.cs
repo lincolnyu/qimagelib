@@ -4,6 +4,7 @@ using ImageCompConsole.Subprograms;
 using QLogger.AppHelpers;
 using QLogger.ConsoleHelpers;
 using QLogger.Shell;
+using System.Diagnostics;
 
 namespace ImageCompConsole
 {
@@ -21,6 +22,11 @@ namespace ImageCompConsole
             try
             {
                 if (args.Length == 0)
+                {
+                    RunInWindowsShell();
+                    return;
+                }
+                if (args.Contains("--interactive"))
                 {
                     RunInteractive();
                     return;
@@ -49,10 +55,14 @@ namespace ImageCompConsole
             }
         }
 
+        private static void RunInWindowsShell()
+        {
+            Process.Start("cmd.exe", "/k run.bat");
+        }
+
         private static void RunInteractive()
         {
             PrintInteractiveWelcome();
-
         }
 
         private static void PrintUsage()
@@ -69,8 +79,14 @@ namespace ImageCompConsole
                 Console.WriteLine();
             }
 
+            Console.WriteLine("  To run in a new windows console with environment variables set");
+            Console.WriteLine($"    {appname}");
+            Console.WriteLine();
+            Console.WriteLine("  To run in interactive mode (not fully implemented)");
+            Console.WriteLine($"    {appname} --interactive");
+            Console.WriteLine();
             Console.WriteLine("  To show this usage help: ");
-            Console.WriteLine($"    {appname } --help");
+            Console.WriteLine($"    {appname} --help");
         }
 
         private static void PrintInteractiveWelcome()
@@ -141,7 +157,6 @@ namespace ImageCompConsole
                  subprog.PrintUsage(leadingStr, 2, 2);
                 Console.WriteLine();
             }
-
             Console.WriteLine("  To show this usage help use 'help' command");
             Console.WriteLine("  To quit this application use 'quit' or 'exit' command");
         }
