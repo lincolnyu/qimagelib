@@ -34,13 +34,13 @@ namespace ImageCompConsole.Subprograms
         public MatchingModes MatchingMode { get; set; }
         public PreprocessingModes PreprocessingMode { get; set; }
 
-        public const int DefaultProprocessParallelism = 16;
+        public const int DefaultPreprocessParallelism = 16;
 
         public static ImageSimpleSearchAndMatch Instance { get; } = new ImageSimpleSearchAndMatch();
 
         public ImageManager ImageManager { get; private set; }
 
-        public int PreprocessParallelism { get; private set; } = DefaultProprocessParallelism;
+        public int PreprocessParallelism { get; private set; } = DefaultPreprocessParallelism;
 
         public override string Subcommand { get; } = "sm";
 
@@ -48,7 +48,7 @@ namespace ImageCompConsole.Subprograms
         {
             var indentStr = new string(' ', indent);
             var contentIndentStr = new string(' ', indent + contentIndent);
-            Console.WriteLine(indentStr + $"To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h to use sequential hasty mode, -s to specify the maximum total size in pixels of images processed in memory (default {TaskManager.DefaultQuota.ConvertToM()}M pixels), -pp to specify the number of parallel tasks for image file loading and preprocessing (default {DefaultProprocessParallelism}))");
+            Console.WriteLine(indentStr + $"To search for similar images in the direcory and its subdirectories (-q to turn on quite mode, -p to run parallel, -h to use sequential hasty mode, -s to specify the maximum total size in pixels of images processed in memory (default {TaskManager.DefaultQuota.ConvertToM()}M pixels), -pp to specify the number of parallel tasks for image file loading and preprocessing (default {DefaultPreprocessParallelism}))");
             Console.WriteLine(contentIndentStr + leadingStr + " {<base directory>|[-l] <list file>} [-p|-h] [-q] [-o <report file>] [-s <total pixel number>] [-pp <num concurrent tasks>]");
         }
 
@@ -70,7 +70,7 @@ namespace ImageCompConsole.Subprograms
             ImageManager = new ImageManager(taskManager);
             var concstr = args.GetSwitchValue("-pp");
             int concurrency;
-            PreprocessParallelism = int.TryParse(concstr, out concurrency) ? concurrency : DefaultProprocessParallelism;
+            PreprocessParallelism = int.TryParse(concstr, out concurrency) ? concurrency : DefaultPreprocessParallelism;
 
             MatchingMode = hasty ? MatchingModes.SequentialHasty : parallel ? MatchingModes.Parallel : MatchingModes.Sequential;
             PreprocessingMode = parallel || PreprocessParallelism != 1 ? PreprocessingModes.Parallel : PreprocessingModes.Sequential;
