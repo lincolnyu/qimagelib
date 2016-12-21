@@ -52,7 +52,6 @@ namespace ImageCompLibWin.SimpleMatch
         public static IEnumerable<MatchResult> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
             double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
-            bool? histo = null;
             for (var i = 0; i < images.Count - 1; i++)
             {
                 var image1 = images[i];
@@ -67,17 +66,17 @@ namespace ImageCompLibWin.SimpleMatch
                         break;
                     }
 
-                    YImage y1, y2;
-                    var error = CheckYImages(image1, image2, out y1, out y2);
-                    if (error != null)
+                    var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
+                    if (mse != null)
                     {
-                        yield return error;
-                    }
+                        YImage y1, y2;
+                        var error = CheckYImages(image1, image2, out y1, out y2);
+                        if (error != null)
+                        {
+                            yield return error;
+                        }
 
-                    var mse = y1.GetSimpleMinMse(y2, mseThr);
-                    if (histo != true && mse != null)
-                    {
-                        mse = TryToFineCompare(image1, image2, mseThr);
+                        mse = y1.GetSimpleMinMse(y2, mseThr);
                     }
                     if (mse != null)
                     {
@@ -112,12 +111,17 @@ namespace ImageCompLibWin.SimpleMatch
                         break;
                     }
 
-                    var y1 = image1.YImage;
-                    var y2 = image2.YImage;
-                    var mse = y1.GetSimpleMinMse(y2, mseThr);
+                    var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
                     if (mse != null)
                     {
-                        mse = TryToFineCompare(image1, image2, mseThr);
+                        YImage y1, y2;
+                        var error = CheckYImages(image1, image2, out y1, out y2);
+                        if (error != null)
+                        {
+                            yield return error;
+                        }
+
+                        mse = y1.GetSimpleMinMse(y2, mseThr);
                     }
                     if (mse != null)
                     {
@@ -173,15 +177,6 @@ namespace ImageCompLibWin.SimpleMatch
         public static IEnumerable<ImageProxy> OrderByAbsAspRatio(this IEnumerable<ImageProxy> yimageFileTuples)
         {
             return yimageFileTuples.OrderBy(x => x.AbsAspRatio);
-        }
-
-        private static double? TryToFineCompare(ImageProxy image1, ImageProxy image2, double mseThr, int maxAttempts = 16)
-        {
-            image1.IsEngaged = true;
-            if (!image1.IsEngaged) return null;
-            image2.IsEngaged = true;
-            if (!image2.IsEngaged) return null;
-            return image1.YImage.GetSimpleMinMse(image2.YImage, mseThr);
         }
     }
 }
