@@ -88,10 +88,12 @@
     <Compile Include="Global\Common.cs" />
     <Compile Include="Helpers\ImageEnumerationReportHelper.cs" />
     <Compile Include="Helpers\NumberConverters.cs" />
+    <Compile Include="Subprograms\MatchingProgram.cs" />
+    <Compile Include="Subprograms\ImageSimpleSearch.cs" />
     <Compile Include="Subprograms\Subprogram.cs" />
     <Compile Include="Subprograms\ImageSimpleComp.cs" />
     <Compile Include="Subprograms\SearchImageFiles.cs" />
-    <Compile Include="Subprograms\ImageSimpleSearchAndMatch.cs" />
+    <Compile Include="Subprograms\ImageSimplePairing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

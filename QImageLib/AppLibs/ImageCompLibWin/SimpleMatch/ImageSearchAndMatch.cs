@@ -49,8 +49,7 @@ namespace ImageCompLibWin.SimpleMatch
             return null;
         }
 
-        public static IEnumerable<MatchResult> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null,
-            double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
+        public static IEnumerable<MatchResult> SimpleSearchAndMatchImages(this IList<ImageProxy> images, ProgressReport progress = null, double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
             for (var i = 0; i < images.Count - 1; i++)
             {
@@ -89,6 +88,14 @@ namespace ImageCompLibWin.SimpleMatch
             }
         }
 
+        /// <summary>
+        ///  This sequential method excludes a right hand side matched image from further comparision
+        /// </summary>
+        /// <param name="images">The images to search for matching pairs</param>
+        /// <param name="progress">The progress of search</param>
+        /// <param name="aspThr">The aspect ratio threshold</param>
+        /// <param name="mseThr">The MSE threshold</param>
+        /// <returns>The matched pairs</returns>
         public static IEnumerable<MatchResult> SimpleSearchAndMatchImagesHasty(this IEnumerable<ImageProxy> images, ProgressReport progress = null,
             double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
         {
@@ -177,6 +184,88 @@ namespace ImageCompLibWin.SimpleMatch
         public static IEnumerable<ImageProxy> OrderByAbsAspRatio(this IEnumerable<ImageProxy> yimageFileTuples)
         {
             return yimageFileTuples.OrderBy(x => x.AbsAspRatio);
+        }
+
+        public static IEnumerable<MatchResult> SimpleSearchAndMatchImages(IList<ImageProxy> left, IList<ImageProxy> right, ProgressReport progress = null,
+        double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
+        {
+            for (var i = 0; i < left.Count; i++)
+            {
+                var image1 = left[i];
+                var r1 = image1.AbsAspRatio;
+
+                for (var j = 0; j < right.Count; j++)
+                {
+                    var image2 = right[j];
+                    var r2 = image2.AbsAspRatio;
+
+                    if (r2 > r1 * aspThr)
+                    {
+                        progress?.Invoke(i, j);
+                        break;
+                    }
+
+                    var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
+                    if (mse != null)
+                    {
+                        YImage y1, y2;
+                        var error = CheckYImages(image1, image2, out y1, out y2);
+                        if (error != null)
+                        {
+                            yield return error;
+                        }
+
+                        mse = y1.GetSimpleMinMse(y2, mseThr);
+                    }
+                    if (mse != null)
+                    {
+                        yield return new ImagesMatch(image1, image2, mse.Value);
+                    }
+
+                    progress?.Invoke(i, j);
+                }
+            }
+        }
+
+        public static IEnumerable<MatchResult> SimpleSearchAndMatchImagesParallel(IList<ImageProxy> left, IList<ImageProxy> right, ParallelProgressReport progress = null,
+       double aspThr = DefaultAspRatioThr, double mseThr = ImageComp.DefaultMseThr)
+        {
+            var result = new List<MatchResult>();
+            var manager = left.FirstOrDefault()?.ImageManager;
+            var manager2 = right.FirstOrDefault()?.ImageManager;
+            if (manager == null || manager2 == null) return result;
+            manager.TaskManager.Start();
+            if (manager2 != manager) manager2.TaskManager.Start();
+
+            var tiSeq = SimpleMatchTaskInfo.GenerateTaskSequenceLR(left.Count, right.Count);
+            Parallel.ForEach(tiSeq, ti =>
+            {
+                var image1 = left[ti.Index1];
+                var image2 = right[ti.Index2];
+                var r1 = image1.AbsAspRatio;
+                var r2 = image2.AbsAspRatio;
+                if (r2 > r1 * aspThr)
+                {
+                    progress?.Invoke();
+                    return;
+                }
+                var mse = image1.Thumb.GetSimpleMinMse(image2.Thumb, mseThr);
+                if (mse != null)
+                {
+                    var task = new SimpleMatchTask(image1, image2, mseThr);
+                    task.Run();
+                    if (task.Result != null)
+                    {
+                        result.Add(task.Result);
+                    }
+                }
+
+                progress?.Invoke();
+            });
+
+            if (manager2 != manager) manager2.TaskManager.Stop();
+            manager.TaskManager.Stop();
+            return result;
         }
     }
 }

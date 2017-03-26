@@ -39,5 +39,28 @@ namespace ImageCompLibWin.SimpleMatch
                 forward = !forward;
             }
         }
+
+        public static IEnumerable<SimpleMatchTaskInfo> GenerateTaskSequenceLR(int l, int r)
+        {
+            var forward = true;
+            for (var i = 0; i < l; i++)
+            {
+                if (forward)
+                {
+                    for (var j = 0; j < r; j++)
+                    {
+                        yield return new SimpleMatchTaskInfo(i, j);
+                    }
+                }
+                else
+                {
+                    for (var j = r-1; j>=0; j--)
+                    {
+                        yield return new SimpleMatchTaskInfo(i, j);
+                    }
+                }
+                forward = !forward;
+            }
+        }
     }
 }

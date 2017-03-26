@@ -14,7 +14,8 @@ namespace ImageCompConsole
         {
             ImageSimpleComp.Instance,
             SearchImageFiles.Instance,
-            ImageSimpleSearchAndMatch.Instance
+            ImageSimplePairing.Instance,
+            ImageSimpleSearch.Instance
         };
 
         private static void Main(string[] args)
