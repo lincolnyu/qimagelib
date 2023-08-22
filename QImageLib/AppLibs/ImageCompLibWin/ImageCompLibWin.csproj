@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ImageCompLibWin</RootNamespace>
     <AssemblyName>ImageCompLibWin</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -61,12 +62,8 @@
       <Project>{124E7226-5154-4A8C-B4A1-BDAEBA8C1973}</Project>
       <Name>QLogger</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\QImageLib.Matcher\QImageLib.Matcher.csproj">
-      <Project>{44FA23E3-FAE3-475C-AE92-4BC429309358}</Project>
-      <Name>QImageLib.Matcher</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\QImageLib\QImageLib.csproj">
-      <Project>{7428B135-1D76-43E0-886A-14C3051231D6}</Project>
+      <Project>{fbdf5055-52af-4bc4-963e-22482b9c1f9b}</Project>
       <Name>QImageLib</Name>
     </ProjectReference>
   </ItemGroup>

@@ -1,12 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QImageLib", "QImageLib\QImageLib.csproj", "{7428B135-1D76-43E0-886A-14C3051231D6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QImageLib.Matcher", "QImageLib.Matcher\QImageLib.Matcher.csproj", "{44FA23E3-FAE3-475C-AE92-4BC429309358}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{0133D3AE-9DDA-4BFD-8D6D-8D7AA2400844}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageCompConsole", "Apps\ImageCompConsole\ImageCompConsole.csproj", "{220A70F2-0204-40C9-8590-29C57D054CD5}"
@@ -25,20 +21,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageCompLibWin.Tests", "Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageCompLibWin.TestConsole", "ImageCompLibWin.TestConsole\ImageCompLibWin.TestConsole.csproj", "{DD7BB1B7-85FA-4A00-A254-A700D086BA26}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QImageLib", "QImageLib\QImageLib.csproj", "{FBDF5055-52AF-4BC4-963E-22482B9C1F9B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7428B135-1D76-43E0-886A-14C3051231D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7428B135-1D76-43E0-886A-14C3051231D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7428B135-1D76-43E0-886A-14C3051231D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7428B135-1D76-43E0-886A-14C3051231D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{44FA23E3-FAE3-475C-AE92-4BC429309358}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{44FA23E3-FAE3-475C-AE92-4BC429309358}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{44FA23E3-FAE3-475C-AE92-4BC429309358}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{44FA23E3-FAE3-475C-AE92-4BC429309358}.Release|Any CPU.Build.0 = Release|Any CPU
 		{220A70F2-0204-40C9-8590-29C57D054CD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{220A70F2-0204-40C9-8590-29C57D054CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{220A70F2-0204-40C9-8590-29C57D054CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -59,6 +49,10 @@ Global
 		{DD7BB1B7-85FA-4A00-A254-A700D086BA26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD7BB1B7-85FA-4A00-A254-A700D086BA26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD7BB1B7-85FA-4A00-A254-A700D086BA26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBDF5055-52AF-4BC4-963E-22482B9C1F9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBDF5055-52AF-4BC4-963E-22482B9C1F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBDF5055-52AF-4BC4-963E-22482B9C1F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBDF5055-52AF-4BC4-963E-22482B9C1F9B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -69,5 +63,8 @@ Global
 		{124E7226-5154-4A8C-B4A1-BDAEBA8C1973} = {B023354F-5C7D-404C-B714-4BA9A6EAE765}
 		{DA27E79E-25F1-471B-B9B7-E3F76064739D} = {80F23CB8-1614-4200-B2E3-791DD967F3BC}
 		{DD7BB1B7-85FA-4A00-A254-A700D086BA26} = {80F23CB8-1614-4200-B2E3-791DD967F3BC}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4D45A971-EE68-4BCD-99E2-2B6D9EC972BE}
 	EndGlobalSection
 EndGlobal

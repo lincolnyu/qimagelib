@@ -9,10 +9,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ImageCompConsole</RootNamespace>
     <AssemblyName>ImageComp</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsWebBootstrapper>true</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
@@ -117,14 +118,6 @@
       <Project>{2bb37eac-0de6-49fa-afbf-53add908f3c4}</Project>
       <Name>ImageCompLibWin</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\QImageLib.Matcher\QImageLib.Matcher.csproj">
-      <Project>{44fa23e3-fae3-475c-ae92-4bc429309358}</Project>
-      <Name>QImageLib.Matcher</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\QImageLib\QImageLib.csproj">
-      <Project>{7428b135-1d76-43e0-886a-14c3051231d6}</Project>
-      <Name>QImageLib</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
@@ -147,11 +140,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetDir)*.exe $(ProjectDir)..\bin\
+    <PostBuildEvent>mkdir $(ProjectDir)..\bin\
+copy $(TargetDir)*.exe $(ProjectDir)..\bin\
 copy $(TargetDir)*.dll $(ProjectDir)..\bin\
-copy $(TargetDir)*.exe $(QSBinDir)
-del $(QSBinDir)\*.vshost.exe
-copy $(TargetDir)*.dll $(QSBinDir)
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
